@@ -37,7 +37,7 @@ export default function StudentProfilePage() {
     const navigate = useNavigate();
     const [alumno, setAlumno] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('pagos');
+    const [activeTab, setActiveTab] = useState('logros');
     const [paymentTab, setPaymentTab] = useState('mensual');
     const [logros, setLogros] = useState([]);
 
