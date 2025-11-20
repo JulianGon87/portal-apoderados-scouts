@@ -1,33 +1,10 @@
-// src/pages/HomePage.jsx (VERSIÓN COMPLETA CON TODOS LOS CAMPOS)
+// src/pages/HomePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
+import Footer from '../components/Footer';
+import AlumnoCard from '../components/AlumnoCard';
 
-const AlumnoCard = ({ nombre, seccion, pagosPendientes }) => (
-  <div className="card">
-    <div className="card-section">
-      <div className="grid-x align-middle">
-        <div className="cell auto">
-          <h4>{nombre}</h4>
-          <p className="subheader" style={{ color: '#1779ba', fontWeight: 600 }}>
-            Sección: {seccion}
-          </p>
-        </div>
-        <div className="cell shrink text-right">
-          <p className="subheader">Pendiente</p>
-          <h4 style={{ color: '#cc4b37', fontWeight: 'bold' }}>
-            {pagosPendientes}
-          </h4>
-        </div>
-      </div>
-    </div>
-    <div className="card-divider">
-      <a href="#" className="button small clear primary">
-        Ver Detalle de Pagos
-      </a>
-    </div>
-  </div>
-);
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -39,11 +16,10 @@ export default function HomePage() {
     const fetchApoderadoData = async () => {
       try {
         setLoading(true);
-        
+
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) {
-          console.error('❌ No hay usuario autenticado');
           navigate('/');
           return;
         }
@@ -55,7 +31,7 @@ export default function HomePage() {
           .single();
 
         if (apoderadoError) {
-          console.error('❌ Error al buscar apoderado:', apoderadoError);
+          console.error('Error al buscar apoderado:', apoderadoError);
           return;
         }
 
@@ -63,18 +39,18 @@ export default function HomePage() {
 
         const { data: alumnosData, error: alumnosError } = await supabase
           .from('alumnos')
-          .select('*')
+          .select('*, pagos(*)')
           .eq('apoderado_id', apoderadoData.id);
 
         if (alumnosError) {
-          console.error('❌ Error al buscar alumnos:', alumnosError);
+          console.error('Error al buscar alumnos:', alumnosError);
           return;
         }
 
         setAlumnos(alumnosData || []);
 
       } catch (error) {
-        console.error('🚨 Error inesperado:', error);
+        console.error('Error inesperado:', error);
       } finally {
         setLoading(false);
       }
@@ -83,108 +59,103 @@ export default function HomePage() {
     fetchApoderadoData();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ Error al cerrar sesión:', error.message);
-        alert('Error al cerrar sesión. Intente nuevamente.');
-        return;
-      }
-
-      navigate('/');
-      
-    } catch (error) {
-      console.error('🚨 Error inesperado:', error);
-      alert('Error inesperado al cerrar sesión.');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="grid-container" style={{ marginTop: '2rem' }}>
-        <div className="grid-x align-center">
-          <div className="cell small-12 text-center">
-            <h3>Cargando información...</h3>
-            <div className="spinner"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // handleLogout logic removed as it is now in Layout.jsx
 
   return (
-    <div>
-      <div className="top-bar">
-        <div className="top-bar-left">
-          <ul className="menu">
-            <li className="menu-text" style={{ fontSize: '1.5rem' }}>
-              Bienvenid@, {apoderado?.nombre || 'Apoderado'}
-            </li>
-          </ul>
-        </div>
-        <div className="top-bar-right">
-          <ul className="menu">
-            <li>
-              <button 
-                type="button" 
-                className="button small alert"
-                onClick={handleLogout}
-                style={{ cursor: 'pointer' }}
-              >
-                Cerrar Sesión
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-      
-      <div className="grid-container" style={{ marginTop: '2rem' }}>
-        <div className="grid-x grid-margin-x">
-          <div className="cell large-8">
-            <h4>Mis Hijos</h4>
-            
+    <div className="min-h-full bg-gray-50 flex flex-col">
+      {/* Header removed - now in Layout */}
+
+      <main className="container mx-auto px-4 py-8 flex-grow max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Columna Principal: Alumnos */}
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-2xl font-display font-bold text-gray-800 border-b pb-2 border-gray-200">
+              Mis Hijos
+            </h2>
+
             {alumnos.length > 0 ? (
-              alumnos.map(alumno => (
-                <AlumnoCard 
-                  key={alumno.id} 
-                  nombre={alumno.nombre}
-                  seccion={alumno.seccion}
-                  pagosPendientes="0 Cuotas"
-                />
-              ))
+              <div className="grid gap-6">
+                {alumnos.map(alumno => (
+                  <AlumnoCard
+                    key={alumno.id}
+                    alumno={alumno}
+                    pagos={alumno.pagos}
+                  />
+                ))}
+              </div>
             ) : (
-              <div className="callout warning">
-                <p>No se encontraron alumnos asociados a su cuenta.</p>
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <span className="text-yellow-400 text-xl">⚠️</span>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      No se encontraron alumnos asociados a su cuenta.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-          
-          <div className="cell large-4" style={{ marginTop: '2rem' }}>
-            <h4>Opciones</h4>
-            <p className="subheader">
-              Aquí se configurará el cambio de clave y el acceso al panel Admin.
-            </p>
-            
-            {/* ✅ INFORMACIÓN DE CONTACTO COMPLETA */}
+
+          {/* Sidebar: Opciones e Info */}
+          <div className="space-y-6">
+            <div className="card-glass p-6">
+              <h4 className="text-lg font-bold text-gray-800 mb-2">Opciones</h4>
+              <p className="text-gray-600 text-sm mb-4">
+                Configuración de cuenta y acceso al panel administrativo.
+              </p>
+              <button className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
+                Cambiar Contraseña
+              </button>
+            </div>
+
             {apoderado && (
-              <div className="callout primary">
-                <h6>Información de Contacto</h6>
-                <p><strong>Teléfono:</strong> {apoderado.telefono}</p>
-                {apoderado.email && <p><strong>Email:</strong> {apoderado.email}</p>}
-                {apoderado.nombre_contacto_emergencia && (
-                  <p><strong>Contacto emergencia:</strong> {apoderado.nombre_contacto_emergencia}</p>
-                )}
-                {/* ✅ TELÉFONO DE EMERGENCIA AGREGADO */}
-                {apoderado.telefono_contacto_emergencia && (
-                  <p><strong>Teléfono emergencia:</strong> {apoderado.telefono_contacto_emergencia}</p>
-                )}
+              <div className="bg-white rounded-2xl shadow-md p-6 border-t-4 border-scout-blue">
+                <h6 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <span>📞</span> Información de Contacto
+                </h6>
+                <div className="space-y-3 text-sm">
+                  <p className="flex flex-col">
+                    <span className="text-gray-500 text-xs uppercase tracking-wider">Teléfono</span>
+                    <span className="font-medium text-gray-900">{apoderado.telefono}</span>
+                  </p>
+
+                  {apoderado.email && (
+                    <p className="flex flex-col">
+                      <span className="text-gray-500 text-xs uppercase tracking-wider">Email</span>
+                      <span className="font-medium text-gray-900 break-all">{apoderado.email}</span>
+                    </p>
+                  )}
+
+                  {(apoderado.nombre_contacto_emergencia || apoderado.telefono_contacto_emergencia) && (
+                    <div className="pt-3 mt-3 border-t border-gray-100">
+                      <span className="block text-red-500 text-xs font-bold uppercase tracking-wider mb-2">
+                        En caso de emergencia
+                      </span>
+                      {apoderado.nombre_contacto_emergencia && (
+                        <p className="mb-1">
+                          <span className="text-gray-900">{apoderado.nombre_contacto_emergencia}</span>
+                        </p>
+                      )}
+                      {apoderado.telefono_contacto_emergencia && (
+                        <p>
+                          <span className="text-gray-600 font-medium">
+                            {apoderado.telefono_contacto_emergencia}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </main>
+
+      <Footer dark className="mt-auto" />
     </div>
   );
 }

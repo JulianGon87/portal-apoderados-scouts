@@ -1,16 +1,23 @@
-// src/App.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage'; // La pantalla de Login (a crear)
-import HomePage from './pages/HomePage';   // El Dashboard/Home (a crear)
+import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
+import Layout from './components/Layout';
+import NotFoundPage from './pages/NotFoundPage';
+import StudentProfilePage from './pages/StudentProfilePage';
 
-export default function App() {
+function App() {
   return (
-    // Las 'Routes' definen qué componente se muestra según la URL
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/home" element={<HomePage />} />
-      {/* Puedes añadir una ruta de fallback aquí si lo deseas */}
+      <Route path="/" element={<Layout />}>
+        <Route index element={<LoginPage />} />
+        <Route path="home" element={<HomePage />} />
+        <Route path="alumno/:id" element={<StudentProfilePage />} />
+        {/* Ruta 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
     </Routes>
   );
 }
+
+export default App;

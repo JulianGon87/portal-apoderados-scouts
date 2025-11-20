@@ -1,17 +1,74 @@
 @import "tailwindcss";
 
-/* Spinner de carga */
+@theme {
+  --color-scout-green: #2d5016;
+  --color-scout-gold: #8b6914;
+  --color-scout-blue: #4a90e2;
+  --color-scout-brown: #6b4423;
+
+  --font-display: 'Outfit', sans-serif;
+
+  --animate-fade-in: fadeIn 0.5s ease-in;
+  --animate-slide-up: slideUp 0.5s ease-out;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased bg-gray-50;
+  }
+}
+
+@layer components {
+  .btn-scout {
+    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300;
+    @apply bg-gradient-to-r from-scout-green to-scout-blue text-white;
+    @apply hover:shadow-lg hover:scale-105 active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .card-glass {
+    @apply bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl;
+    @apply border border-white/20;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-scout-green to-scout-gold bg-clip-text text-transparent;
+  }
+}
+
+/* Spinner personalizado con colores scout */
 .spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #1779ba;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 2s linear infinite;
+  @apply w-10 h-10 border-4 border-gray-200 border-t-scout-blue rounded-full;
+  animation: spin 1s linear infinite;
   margin: 20px auto;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

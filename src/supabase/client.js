@@ -12,6 +12,3 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // 3. Exporta el cliente de Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// 4. Exporta el modo de login (RUT)
-export const identifierMode = 'rut';
