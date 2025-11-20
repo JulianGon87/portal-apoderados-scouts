@@ -51,7 +51,11 @@ export default function Layout() {
                     <div className="flex justify-between items-center h-16">
                         {/* Logo / Title */}
                         <div className="flex items-center gap-2">
-                            <span className="text-2xl">⚜️</span>
+                            <img
+                                src="/logo_admapu.png"
+                                alt="Logo"
+                                className="h-14 w-auto"
+                            />
                             <span className="text-xl font-bold text-white font-outfit tracking-tight">
                                 Portal grupo Scout ADMAPU
                             </span>

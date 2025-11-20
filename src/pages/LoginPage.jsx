@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validateRut } from '../utils/rut.js';
@@ -180,12 +179,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-scout-green via-scout-blue to-scout-gold">
       <div className="flex-grow flex items-center justify-center px-4 py-3">
         <div className="w-full max-w-md">
-          <div className="card-glass p-6 sm:p-8 animate-slide-up">
-            <div className="text-center mb-6">
-              <span className="text-5xl sm:text-6xl animate-fade-in hover:scale-110 transition-transform inline-block cursor-default">
-                ⚜️
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 mt-3">
+          <div className="card-glass p-6 sm:p-8 pt-2 animate-slide-up">
+            <div className="text-center mb-4">
+              <img
+                src="/logo_admapu.png"
+                alt="Logo ADMAPU"
+                className="h-50 w-auto mx-auto mb-0 mt-0 animate-fade-in hover:scale-105 transition-transform"
+              />
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 mt-0">
                 Portal de Información ADMAPU
               </h2>
               <p className="text-gray-600 mt-2 text-sm sm:text-base">Acceso único para apoderados</p>
