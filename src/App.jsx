@@ -12,7 +12,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<LoginPage />} />
         <Route path="home" element={<HomePage />} />
-        <Route path="alumno/:id" element={<StudentProfilePage />} />
+        <Route path="alumno/:slug" element={<StudentProfilePage />} />
         {/* Ruta 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -58,6 +58,10 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
         };
     }, [pagos]);
 
+    const handleCardClick = () => {
+        navigate(`/alumno/${alumno.slug}`);
+    };
+
     return (
         <div className="card-glass p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
@@ -107,7 +111,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
 
             <div className="mt-auto pt-4">
                 <button
-                    onClick={() => navigate(`/alumno/${alumno.id}`)}
+                    onClick={handleCardClick}
                     className="w-full btn-scout text-sm py-2 flex items-center justify-center gap-2 group"
                 >
                     <span>Ver Ficha Completa</span>

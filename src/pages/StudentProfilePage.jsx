@@ -33,7 +33,7 @@ const formatRut = (rut) => {
 };
 
 export default function StudentProfilePage() {
-    const { id } = useParams();
+    const { slug } = useParams();
     const navigate = useNavigate();
     const [alumno, setAlumno] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ export default function StudentProfilePage() {
                 const { data, error } = await supabase
                     .from('alumnos')
                     .select('*, pagos(*)')
-                    .eq('id', id)
+                    .eq('slug', slug)
                     .single();
 
                 if (error) throw error;
@@ -58,7 +58,7 @@ export default function StudentProfilePage() {
                 const { data: logrosData, error: logrosError } = await supabase
                     .from('logros_alumno')
                     .select('*')
-                    .eq('alumno_id', id)
+                    .eq('alumno_id', data.id)
                     .order('fecha_obtencion', { ascending: false });
 
                 if (logrosError) console.error('Error al cargar logros:', logrosError);
@@ -66,14 +66,14 @@ export default function StudentProfilePage() {
 
             } catch (error) {
                 console.error('Error al cargar alumno:', error);
-                navigate('/'); // Volver si hay error
+                navigate('/home'); // Volver si hay error
             } finally {
                 setLoading(false);
             }
         };
 
-        if (id) fetchAlumnoData();
-    }, [id, navigate]);
+        if (slug) fetchAlumnoData();
+    }, [slug, navigate]);
 
     const { paymentGroups, totalDebt, pendingCount } = useMemo(() => {
         if (!alumno || !alumno.pagos) return { paymentGroups: { mensual: { details: [] }, otros: [] }, totalDebt: 0, pendingCount: 0 };

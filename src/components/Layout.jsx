@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 import { LogOut, User } from 'lucide-react';
 
 export default function Layout() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [apoderado, setApoderado] = useState(null);
+    const isLoginPage = location.pathname === '/';
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -57,7 +59,7 @@ export default function Layout() {
 
                         {/* User Info & Logout */}
                         <div className="flex items-center space-x-3">
-                            {apoderado && (
+                            {apoderado && !isLoginPage && (
                                 <>
                                     {/* User Name - Visible on mobile but simplified */}
                                     <div className="flex items-center text-white/90 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-sm">

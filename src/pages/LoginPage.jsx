@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validateRut } from '../utils/rut.js';
 import { supabase } from '../supabase/client.js';
@@ -14,6 +14,16 @@ const LoginForm = () => {
   const [newPassword, setNewPassword] = useState('');
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/home');
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -167,25 +177,25 @@ const LoginForm = () => {
 
 export default function LoginPage() {
   return (
-    <div className="flex-grow flex flex-col bg-gradient-to-br from-scout-green via-scout-blue to-scout-gold relative">
-      <div className="flex-grow flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-scout-green via-scout-blue to-scout-gold">
+      <div className="flex-grow flex items-center justify-center px-4 py-3">
         <div className="w-full max-w-md">
-          <div className="card-glass p-8 animate-slide-up">
-            <div className="text-center mb-8">
-              <span className="text-6xl animate-fade-in hover:scale-110 transition-transform inline-block cursor-default">
+          <div className="card-glass p-6 sm:p-8 animate-slide-up">
+            <div className="text-center mb-6">
+              <span className="text-5xl sm:text-6xl animate-fade-in hover:scale-110 transition-transform inline-block cursor-default">
                 ⚜️
               </span>
-              <h2 className="text-3xl font-display font-bold text-gray-800 mt-4">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 mt-3">
                 Portal de Información ADMAPU
               </h2>
-              <p className="text-gray-600 mt-2">Acceso único para apoderados</p>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Acceso único para apoderados</p>
             </div>
             <LoginForm />
           </div>
         </div>
       </div>
 
-      <Footer className="pb-6" />
+      <Footer className="mt-auto pb-2" />
     </div>
   );
 }
