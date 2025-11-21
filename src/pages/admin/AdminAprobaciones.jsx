@@ -56,7 +56,7 @@ export default function AdminAprobaciones() {
                     )
                 `)
                 .eq('estado', 'aprobado')
-                .order('created_at', { ascending: false });
+                .order('fecha_pago', { ascending: false });
 
             if (pagosError) throw pagosError;
 
@@ -94,7 +94,7 @@ export default function AdminAprobaciones() {
         const currentYear = new Date().getFullYear();
 
         const aprobadosEsteMes = pagosData.filter(p => {
-            const date = new Date(p.created_at);
+            const date = new Date(p.fecha_aprobacion || p.fecha_pago);
             return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
         }).length;
 
@@ -105,7 +105,7 @@ export default function AdminAprobaciones() {
 
         const montoTotal = pagosData
             .filter(p => {
-                const date = new Date(p.created_at);
+                const date = new Date(p.fecha_aprobacion || p.fecha_pago);
                 return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
             })
             .reduce((sum, p) => sum + (p.monto || 0), 0);
@@ -488,7 +488,7 @@ export default function AdminAprobaciones() {
                                         </td>
                                     )}
                                     <td className="px-4 py-3 text-sm text-gray-900">
-                                        {new Date(item.created_at).toLocaleDateString('es-CL')}
+                                        {new Date(item.source === 'pago' ? (item.fecha_pago || item.fecha_aprobacion) : item.created_at).toLocaleDateString('es-CL')}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="text-sm font-medium text-gray-900">
