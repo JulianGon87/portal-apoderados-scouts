@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage';
 import Layout from './components/Layout';
 import NotFoundPage from './pages/NotFoundPage';
 import StudentProfilePage from './pages/StudentProfilePage';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 function App() {
   return (
@@ -17,6 +19,11 @@ function App() {
           <Route path="alumno/:slug" element={<StudentProfilePage />} />
           {/* Ruta 404 */}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Rutas de Admin */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
         </Route>
       </Routes>
       <Analytics />

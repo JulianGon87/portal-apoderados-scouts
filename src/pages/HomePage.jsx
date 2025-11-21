@@ -11,6 +11,7 @@ export default function HomePage() {
   const [apoderado, setApoderado] = useState(null);
   const [alumnos, setAlumnos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchApoderadoData = async () => {
@@ -36,6 +37,10 @@ export default function HomePage() {
         }
 
         setApoderado(apoderadoData);
+
+        // Verificar si el usuario tiene permisos de admin
+        const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe'];
+        setIsAdmin(adminRoles.includes(apoderadoData.rol));
 
         const { data: alumnosData, error: alumnosError } = await supabase
           .from('alumnos')
@@ -106,9 +111,21 @@ export default function HomePage() {
               <p className="text-gray-600 text-sm mb-4">
                 Configuración de cuenta y acceso al panel administrativo.
               </p>
-              <button className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
-                Cambiar Contraseña
-              </button>
+              <div className="space-y-3">
+                <button className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
+                  Cambiar Contraseña
+                </button>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-scout-blue to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2"
+                  >
+                    <span className="text-lg">⚙️</span>
+                    <span>Panel de Administración</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {apoderado && (
