@@ -55,7 +55,7 @@ export default function AdminAprobaciones() {
                         seccion
                     )
                 `)
-                .eq('estado', 'aprobado')
+                .eq('estado', 'PAGADO')
                 .order('fecha_pago', { ascending: false });
 
             if (pagosError) throw pagosError;
@@ -206,7 +206,7 @@ export default function AdminAprobaciones() {
                 .insert({
                     alumno_id: ticket.alumno_id,
                     monto: ticket.monto,
-                    estado: 'aprobado',
+                    estado: 'PAGADO',
                     tipo_item: ticket.tipo_item,
                     item_id: ticket.item_id,
                     fecha_pago: ticket.fecha_pago,
@@ -258,7 +258,7 @@ export default function AdminAprobaciones() {
                         .insert({
                             alumno_id: ticket.alumno_id,
                             monto: ticket.monto,
-                            estado: 'aprobado',
+                            estado: 'PAGADO',
                             tipo_item: ticket.tipo_item,
                             item_id: ticket.item_id,
                             fecha_pago: ticket.fecha_pago,
