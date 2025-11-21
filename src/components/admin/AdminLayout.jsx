@@ -44,7 +44,7 @@ const AdminLayout = () => {
 
                 {/* Main Content */}
                 <main className="flex-1 w-full lg:ml-64 transition-all duration-300">
-                    <div className="p-4 md:p-6 pt-20">
+                    <div className="p-4 md:p-6 pt-[calc(3.5rem+1rem)]">
                         <Outlet />
                     </div>
                 </main>
