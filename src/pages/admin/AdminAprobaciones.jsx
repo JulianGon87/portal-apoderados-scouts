@@ -37,34 +37,7 @@ export default function AdminAprobaciones() {
         setCurrentPage(1);
     }, [activeTab, filterSeccion, filterTipo, searchTerm]);
 
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            // Ctrl/Cmd + A: Select all pending tickets
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && activeTab === 'pendientes') {
-                e.preventDefault();
-                const pendingIds = filteredItems
-                    .filter(item => item.source === 'ticket' && item.estado === 'pendiente')
-                    .map(item => item.id);
-                setSelectedItems(pendingIds);
-                addToast('Todos los tickets pendientes seleccionados', 'info');
-            }
 
-            // Ctrl/Cmd + Enter: Approve selected
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && selectedItems.length > 0) {
-                e.preventDefault();
-                handleApproveSelected();
-            }
-
-            // Esc: Close modal
-            if (e.key === 'Escape' && showPreviewModal) {
-                setShowPreviewModal(false);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeTab, selectedItems, showPreviewModal, filteredItems]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -177,6 +150,35 @@ export default function AdminAprobaciones() {
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ctrl/Cmd + A: Select all pending tickets
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && activeTab === 'pendientes') {
+                e.preventDefault();
+                const pendingIds = filteredItems
+                    .filter(item => item.source === 'ticket' && item.estado === 'pendiente')
+                    .map(item => item.id);
+                setSelectedItems(pendingIds);
+                addToast('Todos los tickets pendientes seleccionados', 'info');
+            }
+
+            // Ctrl/Cmd + Enter: Approve selected
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && selectedItems.length > 0) {
+                e.preventDefault();
+                handleApproveSelected();
+            }
+
+            // Esc: Close modal
+            if (e.key === 'Escape' && showPreviewModal) {
+                setShowPreviewModal(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeTab, selectedItems, showPreviewModal, filteredItems]);
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
@@ -358,8 +360,8 @@ export default function AdminAprobaciones() {
                         <button
                             onClick={() => setActiveTab('pendientes')}
                             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'pendientes'
-                                    ? 'border-scout-blue text-scout-blue'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-scout-blue text-scout-blue'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
                             Pendientes ({tickets.filter(t => t.estado === 'pendiente').length})
@@ -367,8 +369,8 @@ export default function AdminAprobaciones() {
                         <button
                             onClick={() => setActiveTab('aprobados')}
                             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'aprobados'
-                                    ? 'border-scout-blue text-scout-blue'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-scout-blue text-scout-blue'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
                             Aprobados ({pagos.length})
@@ -376,8 +378,8 @@ export default function AdminAprobaciones() {
                         <button
                             onClick={() => setActiveTab('rechazados')}
                             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'rechazados'
-                                    ? 'border-scout-blue text-scout-blue'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-scout-blue text-scout-blue'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
                             Rechazados ({tickets.filter(t => t.estado === 'rechazado').length})
