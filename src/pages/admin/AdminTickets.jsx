@@ -70,7 +70,7 @@ const AdminTickets = () => {
                 monto: ticket.monto,
                 fecha_pago: ticket.fecha_pago,
                 metodo_pago: 'transferencia',
-                estado: 'aprobado',
+                estado: 'PAGADO',
                 tipo_item: ticket.tipo_item,
                 item_id: ticket.item_id,
                 comprobante_url: ticket.comprobante_url,
