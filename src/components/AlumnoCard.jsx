@@ -19,47 +19,82 @@ const CUOTA_VALUE = 5000;
 
 const AlumnoCard = ({ alumno, pagos = [] }) => {
     const navigate = useNavigate();
+    const items = alumno.items || [];
 
     const { paymentGroups, totalDebt, pendingCount } = useMemo(() => {
         const currentYear = new Date().getFullYear();
 
-        // 1. Procesar Cuotas Mensuales
-        const mensualDetails = MONTHS.map(month => {
+        // 1. Mapear items a estado de pago
+        const itemsWithStatus = items.map(item => {
+            // Buscar si existe un pago con estado PAGADO para este item
+            // Coincidencia por: tipo, año, mes (si aplica) y monto aproximado
             const isPaid = pagos.some(p =>
-                (p.tipo_item === 'cuota_mensual' || !p.tipo_item) && // Compatibilidad hacia atrás
-                p.mes === month.id &&
-                p.anio === currentYear &&
-                p.estado === 'PAGADO'
+                p.estado === 'PAGADO' &&
+                p.anio === item.anio &&
+                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                // Si es cuota mensual, el tipo puede no estar en pagos antiguos, así que asumimos cuota si tiene mes
+                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
             );
+
             return {
-                monthId: month.id,
-                monthName: month.name,
+                ...item,
                 isPaid
             };
         });
 
-        const pending = mensualDetails.filter(s => !s.isPaid).length;
-        const debt = pending * CUOTA_VALUE;
+        // 2. Agrupar Cuotas Mensuales
+        const cuotasMensuales = itemsWithStatus
+            .filter(i => i.tipo_item === 'cuota_mensual')
+            .sort((a, b) => a.mes - b.mes);
 
-        // 2. Procesar Otros Pagos
-        const otrosPagos = pagos.filter(p =>
-            p.tipo_item &&
-            p.tipo_item !== 'cuota_mensual' &&
-            p.estado === 'PAGADO'
-        );
+        // Rellenar meses faltantes para visualización (opcional, pero bueno para UX)
+        const mensualDetails = MONTHS.map(month => {
+            const itemParaMes = cuotasMensuales.find(c => c.mes === month.id);
+
+            if (itemParaMes) {
+                return {
+                    monthId: month.id,
+                    monthName: month.name,
+                    isPaid: itemParaMes.isPaid,
+                    amount: itemParaMes.monto,
+                    hasItem: true
+                };
+            }
+
+            // Si no hay item para este mes, no es cobrable aún o no existe cobro
+            return {
+                monthId: month.id,
+                monthName: month.name,
+                isPaid: false, // Irrelevante si hasItem es false
+                hasItem: false
+            };
+        });
+
+        // 3. Agrupar Otros Pagos
+        const otrosPagos = itemsWithStatus.filter(i => i.tipo_item !== 'cuota_mensual');
+
+        // 4. Calcular Deuda
+        // Solo sumar items que existen y no están pagados
+        const deudaCuotas = cuotasMensuales.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
+        const deudaOtros = otrosPagos.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
+
+        const totalDebt = deudaCuotas + deudaOtros;
+        const pendingCount = itemsWithStatus.filter(i => !i.isPaid).length;
 
         return {
             paymentGroups: {
                 mensual: { details: mensualDetails },
                 otros: otrosPagos
             },
-            totalDebt: debt,
-            pendingCount: pending
+            totalDebt,
+            pendingCount
         };
-    }, [pagos]);
+    }, [items, pagos]);
 
     const handleCardClick = () => {
-        navigate(`/alumno/${alumno.slug}`);
+        // Fallback a ID si no hay slug (para compatibilidad durante migración)
+        const identifier = alumno.slug || alumno.id;
+        navigate(`/alumno/${identifier}`);
     };
 
     return (
@@ -75,7 +110,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
                     </p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Estado Cuotas</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Estado Cuenta</p>
                     {totalDebt === 0 ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold mt-1">
                             ✅ Al día
@@ -86,7 +121,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
                                 ${totalDebt.toLocaleString('es-CL')}
                             </p>
                             <p className="text-xs text-red-400 font-medium">
-                                {pendingCount} cuota{pendingCount !== 1 ? 's' : ''} pendiente{pendingCount !== 1 ? 's' : ''}
+                                {pendingCount} item{pendingCount === 1 ? '' : 's'} pendiente{pendingCount === 1 ? '' : 's'}
                             </p>
                         </div>
                     )}
@@ -97,7 +132,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
             {paymentGroups.otros.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
                     {paymentGroups.otros.slice(0, 3).map((p, i) => (
-                        <span key={i} className="text-[10px] px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 truncate max-w-[120px]">
+                        <span key={i} className={`text-[10px] px-2 py-1 rounded-full border truncate max-w-[120px] ${p.isPaid ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
                             {p.tipo_item === 'campamento' ? '⛺' : p.tipo_item === 'evento' ? '🎉' : '🏷️'} {p.descripcion}
                         </span>
                     ))}

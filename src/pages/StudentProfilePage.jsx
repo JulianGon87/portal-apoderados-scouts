@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client';
+import TicketPagoForm from '../components/TicketPagoForm';
 
 const MONTHS = [
     { id: 3, name: 'Marzo' },
@@ -39,20 +40,47 @@ export default function StudentProfilePage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('logros');
     const [paymentTab, setPaymentTab] = useState('mensual');
+    const [items, setItems] = useState([]);
     const [logros, setLogros] = useState([]);
+    const [tickets, setTickets] = useState([]);
+    const [showTicketForm, setShowTicketForm] = useState(false);
 
     useEffect(() => {
         const fetchAlumnoData = async () => {
             try {
                 setLoading(true);
-                const { data, error } = await supabase
+                let query = supabase
                     .from('alumnos')
                     .select('*, pagos(*)')
-                    .eq('slug', slug)
                     .single();
+
+                // Determinar si buscamos por ID o Slug
+                // Si es numérico, asumimos ID (fallback)
+                if (/^\d+$/.test(slug)) {
+                    query = query.eq('id', slug);
+                } else {
+                    query = query.eq('slug', slug);
+                }
+
+                const { data, error } = await query;
 
                 if (error) throw error;
                 setAlumno(data);
+
+                // Fetch Items de Pago
+                const currentYear = new Date().getFullYear();
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('items_pago')
+                    .select('*')
+                    .eq('anio', currentYear);
+
+                if (itemsError) console.error('Error al cargar items:', itemsError);
+
+                // Filtrar items aplicables
+                const applicableItems = (itemsData || []).filter(item =>
+                    !item.seccion || item.seccion === data.seccion
+                );
+                setItems(applicableItems);
 
                 // Fetch Logros
                 const { data: logrosData, error: logrosError } = await supabase
@@ -63,6 +91,16 @@ export default function StudentProfilePage() {
 
                 if (logrosError) console.error('Error al cargar logros:', logrosError);
                 setLogros(logrosData || []);
+
+                // Fetch Tickets de Pago
+                const { data: ticketsData, error: ticketsError } = await supabase
+                    .from('tickets_pago')
+                    .select('*')
+                    .eq('alumno_id', data.id)
+                    .order('created_at', { ascending: false });
+
+                if (ticketsError) console.error('Error al cargar tickets:', ticketsError);
+                setTickets(ticketsData || []);
 
             } catch (error) {
                 console.error('Error al cargar alumno:', error);
@@ -75,46 +113,80 @@ export default function StudentProfilePage() {
         if (slug) fetchAlumnoData();
     }, [slug, navigate]);
 
+    const handleTicketSuccess = () => {
+        setShowTicketForm(false);
+        // Recargar datos para mostrar el nuevo ticket
+        // Idealmente refactorizar fetchAlumnoData para reutilizarlo, 
+        // pero por ahora forzamos recarga simple o añadimos manualmente
+        window.location.reload();
+    };
+
     const { paymentGroups, totalDebt, pendingCount } = useMemo(() => {
         if (!alumno || !alumno.pagos) return { paymentGroups: { mensual: { details: [] }, otros: [] }, totalDebt: 0, pendingCount: 0 };
 
-        const currentYear = new Date().getFullYear();
         const pagos = alumno.pagos;
 
-        // 1. Procesar Cuotas Mensuales
-        const mensualDetails = MONTHS.map(month => {
+        // 1. Mapear items a estado de pago
+        const itemsWithStatus = items.map(item => {
             const isPaid = pagos.some(p =>
-                (p.tipo_item === 'cuota_mensual' || !p.tipo_item) &&
-                p.mes === month.id &&
-                p.anio === currentYear &&
-                p.estado === 'PAGADO'
+                p.estado === 'PAGADO' &&
+                p.anio === item.anio &&
+                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
             );
+
             return {
-                monthId: month.id,
-                monthName: month.name,
+                ...item,
                 isPaid
             };
         });
 
-        const pending = mensualDetails.filter(s => !s.isPaid).length;
-        const debt = pending * CUOTA_VALUE;
+        // 2. Agrupar Cuotas Mensuales
+        const cuotasMensuales = itemsWithStatus
+            .filter(i => i.tipo_item === 'cuota_mensual')
+            .sort((a, b) => a.mes - b.mes);
 
-        // 2. Procesar Otros Pagos
-        const otrosPagos = pagos.filter(p =>
-            p.tipo_item &&
-            p.tipo_item !== 'cuota_mensual' &&
-            p.estado === 'PAGADO'
-        );
+        const mensualDetails = MONTHS.map(month => {
+            const itemParaMes = cuotasMensuales.find(c => c.mes === month.id);
+
+            if (itemParaMes) {
+                return {
+                    monthId: month.id,
+                    monthName: month.name,
+                    isPaid: itemParaMes.isPaid,
+                    amount: itemParaMes.monto,
+                    hasItem: true,
+                    descripcion: itemParaMes.descripcion
+                };
+            }
+
+            return {
+                monthId: month.id,
+                monthName: month.name,
+                isPaid: false,
+                hasItem: false
+            };
+        });
+
+        // 3. Agrupar Otros Pagos (Mostrar todos, pagados y pendientes)
+        const otrosPagos = itemsWithStatus.filter(i => i.tipo_item !== 'cuota_mensual');
+
+        // 4. Calcular Deuda
+        const deudaCuotas = cuotasMensuales.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
+        const deudaOtros = otrosPagos.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
+
+        const totalDebt = deudaCuotas + deudaOtros;
+        const pendingCount = itemsWithStatus.filter(i => !i.isPaid).length;
 
         return {
             paymentGroups: {
                 mensual: { details: mensualDetails },
                 otros: otrosPagos
             },
-            totalDebt: debt,
-            pendingCount: pending
+            totalDebt,
+            pendingCount
         };
-    }, [alumno]);
+    }, [alumno, items]);
 
     if (loading) {
         return (
@@ -209,13 +281,21 @@ export default function StudentProfilePage() {
                             </div>
                         </div>
 
-                        {/* Estado General Badge */}
-                        <div className={`px-6 py-3 rounded-xl backdrop-blur-md border border-white/20 shadow-lg ${totalDebt === 0 ? 'bg-green-500/20 text-green-50' : 'bg-red-500/20 text-red-50'
-                            }`}>
-                            <p className="text-xs uppercase tracking-wider font-bold opacity-80">Estado Financiero</p>
-                            <p className="text-2xl font-bold mt-1">
-                                {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')} Deuda`}
-                            </p>
+                        {/* Estado General Badge + Botón Pagar */}
+                        <div className="flex flex-col gap-3 items-end">
+                            <div className={`px-6 py-3 rounded-xl backdrop-blur-md border border-white/20 shadow-lg ${totalDebt === 0 ? 'bg-green-500/20 text-green-50' : 'bg-red-500/20 text-red-50'
+                                }`}>
+                                <p className="text-xs uppercase tracking-wider font-bold opacity-80">Estado Financiero</p>
+                                <p className="text-2xl font-bold mt-1">
+                                    {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')} Deuda`}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowTicketForm(true)}
+                                className="bg-white text-scout-blue px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                💸 Informar Pago
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -251,10 +331,10 @@ export default function StudentProfilePage() {
                         {activeTab === 'pagos' && (
                             <div className="animate-fade-in">
                                 {/* Sub-tabs para Pagos */}
-                                <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg w-fit mx-auto md:mx-0">
+                                <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg w-fit mx-auto md:mx-0 overflow-x-auto">
                                     <button
                                         onClick={() => setPaymentTab('mensual')}
-                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${paymentTab === 'mensual'
+                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${paymentTab === 'mensual'
                                             ? 'bg-white text-scout-blue shadow-sm'
                                             : 'text-gray-600 hover:text-gray-800'
                                             }`}
@@ -263,12 +343,21 @@ export default function StudentProfilePage() {
                                     </button>
                                     <button
                                         onClick={() => setPaymentTab('otros')}
-                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${paymentTab === 'otros'
+                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${paymentTab === 'otros'
                                             ? 'bg-white text-scout-blue shadow-sm'
                                             : 'text-gray-600 hover:text-gray-800'
                                             }`}
                                     >
                                         Otros Pagos
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentTab('tickets')}
+                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${paymentTab === 'tickets'
+                                            ? 'bg-white text-scout-blue shadow-sm'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                            }`}
+                                    >
+                                        Solicitudes ({tickets.filter(t => t.estado === 'pendiente').length})
                                     </button>
                                 </div>
 
@@ -277,24 +366,36 @@ export default function StudentProfilePage() {
                                         {paymentGroups.mensual.details.map((status) => (
                                             <div
                                                 key={status.monthId}
-                                                className={`flex justify-between items-center p-4 rounded-xl border transition-all hover:shadow-md ${status.isPaid
-                                                    ? 'bg-green-50 border-green-200'
-                                                    : 'bg-white border-red-200 shadow-sm'
+                                                className={`flex justify-between items-center p-4 rounded-xl border transition-all hover:shadow-md ${!status.hasItem
+                                                    ? 'bg-gray-50 border-gray-200 opacity-60'
+                                                    : status.isPaid
+                                                        ? 'bg-green-50 border-green-200'
+                                                        : 'bg-white border-red-200 shadow-sm'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${status.isPaid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${!status.hasItem
+                                                        ? 'bg-gray-200 text-gray-400'
+                                                        : status.isPaid
+                                                            ? 'bg-green-100 text-green-600'
+                                                            : 'bg-red-100 text-red-600'
                                                         }`}>
-                                                        {status.isPaid ? '✓' : '!'}
+                                                        {status.isPaid ? '✓' : !status.hasItem ? '-' : '!'}
                                                     </div>
-                                                    <span className="font-bold text-gray-700 text-lg">{status.monthName}</span>
+                                                    <span className={`font-bold text-lg ${status.hasItem ? 'text-gray-700' : 'text-gray-400'}`}>
+                                                        {status.monthName}
+                                                    </span>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className={`block text-sm font-bold ${status.isPaid ? 'text-green-600' : 'text-red-600'
+                                                    <span className={`block text-sm font-bold ${status.hasItem
+                                                        ? status.isPaid
+                                                            ? 'text-green-600'
+                                                            : 'text-red-600'
+                                                        : 'text-gray-400'
                                                         }`}>
-                                                        {status.isPaid ? 'PAGADO' : '$5.000'}
+                                                        {status.isPaid ? 'PAGADO' : status.hasItem ? `$${status.amount.toLocaleString('es-CL')}` : 'No asignado'}
                                                     </span>
-                                                    {!status.isPaid && (
+                                                    {status.hasItem && !status.isPaid && (
                                                         <span className="text-xs text-red-400">Pendiente</span>
                                                     )}
                                                 </div>
@@ -341,6 +442,60 @@ export default function StudentProfilePage() {
                                         )}
                                     </div>
                                 )}
+
+                                {paymentTab === 'tickets' && (
+                                    <div className="space-y-4">
+                                        {tickets.length === 0 ? (
+                                            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                                <p className="text-4xl mb-2">🎫</p>
+                                                <p className="text-gray-500 font-medium">No has informado pagos aún.</p>
+                                                <button
+                                                    onClick={() => setShowTicketForm(true)}
+                                                    className="mt-4 text-scout-blue font-bold hover:underline"
+                                                >
+                                                    Informar un pago ahora
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {tickets.map((ticket) => (
+                                                    <div key={ticket.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-1 ${ticket.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
+                                                                    ticket.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
+                                                                        'bg-yellow-100 text-yellow-800'
+                                                                    }`}>
+                                                                    {ticket.estado}
+                                                                </span>
+                                                                <h4 className="font-bold text-gray-800 text-lg capitalize">
+                                                                    {ticket.tipo_item.replace('_', ' ')}
+                                                                </h4>
+                                                            </div>
+                                                            <p className="text-xl font-bold text-gray-800">
+                                                                ${ticket.monto.toLocaleString('es-CL')}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 flex justify-between items-center">
+                                                            <span>📅 {new Date(ticket.fecha_pago).toLocaleDateString('es-CL')}</span>
+                                                            {ticket.comprobante_url && (
+                                                                <a href={ticket.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                                                                    📎 Ver Comprobante
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                        {ticket.comentario_admin && (
+                                                            <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 border-l-4 border-gray-300">
+                                                                <span className="font-bold block text-xs text-gray-500 uppercase">Comentario Admin:</span>
+                                                                {ticket.comentario_admin}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -379,6 +534,31 @@ export default function StudentProfilePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Ticket de Pago */}
+            {showTicketForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900">Informar Pago</h2>
+                                <button
+                                    onClick={() => setShowTicketForm(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <TicketPagoForm
+                                alumno={alumno}
+                                items={items}
+                                onSuccess={handleTicketSuccess}
+                                onCancel={() => setShowTicketForm(false)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

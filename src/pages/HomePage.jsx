@@ -25,6 +25,7 @@ export default function HomePage() {
           return;
         }
 
+        // 1. Obtener datos del apoderado
         const { data: apoderadoData, error: apoderadoError } = await supabase
           .from('users')
           .select('*')
@@ -42,6 +43,7 @@ export default function HomePage() {
         const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe'];
         setIsAdmin(adminRoles.includes(apoderadoData.rol));
 
+        // 2. Obtener alumnos
         const { data: alumnosData, error: alumnosError } = await supabase
           .from('alumnos')
           .select('*, pagos(*)')
@@ -52,7 +54,31 @@ export default function HomePage() {
           return;
         }
 
-        setAlumnos(alumnosData || []);
+        // 3. Obtener items de cobro del año actual
+        const currentYear = new Date().getFullYear();
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('items_pago')
+          .select('*')
+          .eq('anio', currentYear);
+
+        if (itemsError) {
+          console.error('Error al buscar items de pago:', itemsError);
+        }
+
+        // 4. Combinar alumnos con sus items aplicables
+        const alumnosWithItems = (alumnosData || []).map(alumno => {
+          // Filtrar items que aplican a este alumno (por sección o globales)
+          const applicableItems = (itemsData || []).filter(item => {
+            return !item.seccion || item.seccion === alumno.seccion;
+          });
+
+          return {
+            ...alumno,
+            items: applicableItems
+          };
+        });
+
+        setAlumnos(alumnosWithItems);
 
       } catch (error) {
         console.error('Error inesperado:', error);

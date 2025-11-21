@@ -6,7 +6,7 @@ import useAdminAuth from '../../hooks/useAdminAuth';
  * Sidebar de navegación del panel de administración
  * Muestra los links según los permisos del usuario
  */
-const AdminSidebar = ({ isOpen, rol }) => {
+const AdminSidebar = ({ isOpen, onClose, rol }) => {
     const { hasPermission } = useAdminAuth();
 
     // Definir items de navegación con sus permisos requeridos
@@ -26,7 +26,7 @@ const AdminSidebar = ({ isOpen, rol }) => {
         },
         {
             path: '/admin/tickets',
-            label: 'Tickets Pendientes',
+            label: 'Tickets de Pago',
             icon: '🎫',
             permission: 'gestionar_tickets'
         },
@@ -56,23 +56,22 @@ const AdminSidebar = ({ isOpen, rol }) => {
         }
     ];
 
-    // Filtrar items según permisos
-    const visibleItems = navItems.filter(item => hasPermission(item.permission));
+    const visibleItems = navItems.filter(item => hasPermission ? hasPermission(item.permission) : true);
 
     return (
         <>
-            {/* Overlay para mobile */}
+            {/* Overlay para mobile - cierra el sidebar al hacer click */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-                    onClick={() => { }}
+                    onClick={onClose}
                 />
             )}
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 bg-white shadow-lg transform transition-transform duration-300 z-40 overflow-y-auto ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-                    }`}
+                className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 bg-white shadow-lg transform transition-transform duration-300 z-50 overflow-y-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                    } lg:translate-x-0`}
             >
                 <nav className="p-4 space-y-2">
                     {visibleItems.map((item) => (
@@ -80,6 +79,12 @@ const AdminSidebar = ({ isOpen, rol }) => {
                             key={item.path}
                             to={item.path}
                             end={item.exact}
+                            onClick={() => {
+                                // Cerrar sidebar en móvil al hacer click en un link
+                                if (window.innerWidth < 1024) {
+                                    onClose?.();
+                                }
+                            }}
                             className={({ isActive }) =>
                                 `flex items-center px-4 py-3 rounded-lg transition-colors ${isActive
                                     ? 'bg-scout-blue text-white'
@@ -97,7 +102,7 @@ const AdminSidebar = ({ isOpen, rol }) => {
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
                     <div className="text-xs text-gray-500 text-center">
                         <p className="font-semibold">Panel de Administración</p>
-                        <p>ADMAPU © 2024</p>
+                        <p>ADMAPU © 2025</p>
                     </div>
                 </div>
             </aside>

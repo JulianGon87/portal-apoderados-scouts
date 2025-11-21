@@ -30,4 +30,9 @@ async function inspect() {
     console.log(Object.keys(data[0]).join('\n'));
 }
 
-inspect();
+try {
+    await inspect();
+} catch (error) {
+    console.error(error);
+    process.exit(1);
+}

@@ -9,7 +9,8 @@ import useAdminAuth from '../../hooks/useAdminAuth';
  * Incluye sidebar colapsable y header con información del admin
  */
 const AdminLayout = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    // Sidebar cerrado por defecto en móvil, abierto en desktop
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const { user, rol, isLoading } = useAdminAuth();
 
     if (isLoading) {
@@ -37,15 +38,13 @@ const AdminLayout = () => {
                 {/* Sidebar */}
                 <AdminSidebar
                     isOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
                     rol={rol}
                 />
 
                 {/* Main Content */}
-                <main
-                    className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-0 lg:ml-64' : 'ml-0'
-                        }`}
-                >
-                    <div className="p-6 pt-20">
+                <main className="flex-1 w-full lg:ml-64 transition-all duration-300">
+                    <div className="p-4 md:p-6 pt-20">
                         <Outlet />
                     </div>
                 </main>

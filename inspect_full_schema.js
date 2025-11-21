@@ -53,4 +53,9 @@ async function inspeccionarEsquema() {
     console.log('\n✅ Inspección completada');
 }
 
-inspeccionarEsquema().catch(console.error);
+try {
+    await inspeccionarEsquema();
+} catch (error) {
+    console.error(error);
+    process.exit(1);
+}

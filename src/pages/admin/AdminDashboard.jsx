@@ -1,11 +1,14 @@
 import React from 'react';
 import StatsCard from '../../components/admin/StatsCard';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 /**
  * Dashboard principal del panel de administración
  * Muestra métricas, resumen y acciones rápidas
  */
 const AdminDashboard = () => {
+    const { hasPermission, isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
+
     // TODO: Obtener datos reales de Supabase
     const stats = {
         totalRecaudado: 1250000,
@@ -13,6 +16,14 @@ const AdminDashboard = () => {
         pagosAprobar: 8,
         deudaTotal: 3450000
     };
+
+    if (authLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-scout-blue"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
