@@ -32,80 +32,72 @@ export default function StudentProfilePage() {
     const [tickets, setTickets] = useState([]);
     const [showTicketForm, setShowTicketForm] = useState(false);
 
-    useEffect(() => {
-        const fetchAlumnoData = async () => {
-            try {
-                setLoading(true);
-                let query = supabase
-                    .from('alumnos')
-                    .select('*, pagos(*)')
-                    .single();
+    const fetchAlumnoData = React.useCallback(async () => {
+        try {
+            if (!alumno) setLoading(true);
 
-                // Determinar si buscamos por ID o Slug
-                // Si es numérico, asumimos ID (fallback)
-                if (/^\d+$/.test(slug)) {
-                    query = query.eq('id', slug);
-                } else {
-                    query = query.eq('slug', slug);
-                }
+            let query = supabase
+                .from('alumnos')
+                .select('*, pagos(*)')
+                .single();
 
-                const { data, error } = await query;
-
-                if (error) throw error;
-                setAlumno(data);
-
-                // Fetch Items de Pago
-                const currentYear = new Date().getFullYear();
-                const { data: itemsData, error: itemsError } = await supabase
-                    .from('items_pago')
-                    .select('*')
-                    .eq('anio', currentYear);
-
-                if (itemsError) console.error('Error al cargar items:', itemsError);
-
-                // Filtrar items aplicables
-                const applicableItems = (itemsData || []).filter(item =>
-                    !item.seccion || item.seccion === data.seccion
-                );
-                setItems(applicableItems);
-
-                // Fetch Logros
-                const { data: logrosData, error: logrosError } = await supabase
-                    .from('logros_alumno')
-                    .select('*')
-                    .eq('alumno_id', data.id)
-                    .order('fecha_obtencion', { ascending: false });
-
-                if (logrosError) console.error('Error al cargar logros:', logrosError);
-                setLogros(logrosData || []);
-
-                // Fetch Tickets de Pago
-                const { data: ticketsData, error: ticketsError } = await supabase
-                    .from('tickets_pago')
-                    .select('*')
-                    .eq('alumno_id', data.id)
-                    .order('created_at', { ascending: false });
-
-                if (ticketsError) console.error('Error al cargar tickets:', ticketsError);
-                setTickets(ticketsData || []);
-
-            } catch (error) {
-                console.error('Error al cargar alumno:', error);
-                navigate('/home'); // Volver si hay error
-            } finally {
-                setLoading(false);
+            if (/^\d+$/.test(slug)) {
+                query = query.eq('id', slug);
+            } else {
+                query = query.eq('slug', slug);
             }
-        };
 
+            const { data, error } = await query;
+
+            if (error) throw error;
+            setAlumno(data);
+
+            const currentYear = new Date().getFullYear();
+            const { data: itemsData, error: itemsError } = await supabase
+                .from('items_pago')
+                .select('*')
+                .eq('anio', currentYear);
+
+            if (itemsError) console.error('Error al cargar items:', itemsError);
+
+            const applicableItems = (itemsData || []).filter(item =>
+                !item.seccion || item.seccion === data.seccion
+            );
+            setItems(applicableItems);
+
+            const { data: logrosData, error: logrosError } = await supabase
+                .from('logros_alumno')
+                .select('*')
+                .eq('alumno_id', data.id)
+                .order('fecha_obtencion', { ascending: false });
+
+            if (logrosError) console.error('Error al cargar logros:', logrosError);
+            setLogros(logrosData || []);
+
+            const { data: ticketsData, error: ticketsError } = await supabase
+                .from('tickets_pago')
+                .select('*')
+                .eq('alumno_id', data.id)
+                .order('created_at', { ascending: false });
+
+            if (ticketsError) console.error('Error al cargar tickets:', ticketsError);
+            setTickets(ticketsData || []);
+
+        } catch (error) {
+            console.error('Error al cargar alumno:', error);
+            navigate('/home');
+        } finally {
+            setLoading(false);
+        }
+    }, [slug, navigate]); // Eliminamos 'alumno' de las dependencias para evitar loops, ya que lo usamos solo para el check inicial
+
+    useEffect(() => {
         if (slug) fetchAlumnoData();
-    }, [slug, navigate]);
+    }, [slug, fetchAlumnoData]);
 
     const handleTicketSuccess = () => {
         setShowTicketForm(false);
-        // Recargar datos para mostrar el nuevo ticket
-        // Idealmente refactorizar fetchAlumnoData para reutilizarlo, 
-        // pero por ahora forzamos recarga simple o añadimos manualmente
-        window.location.reload();
+        fetchAlumnoData(); // Recarga suave de datos
     };
 
     const { paymentGroups, totalDebt, pendingCount } = useStudentFinance(items, alumno?.pagos);
