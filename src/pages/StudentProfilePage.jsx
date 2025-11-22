@@ -204,12 +204,14 @@ export default function StudentProfilePage() {
                                     {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')} Deuda`}
                                 </p>
                             </div>
-                            <button
-                                onClick={() => setShowTicketForm(true)}
-                                className="bg-white text-scout-blue px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center gap-2"
-                            >
-                                💸 Informar Pago
-                            </button>
+                            {pendingCount > 0 && (
+                                <button
+                                    onClick={() => setShowTicketForm(true)}
+                                    className="bg-white text-scout-blue px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center gap-2"
+                                >
+                                    💸 Informar Pago
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
