@@ -198,31 +198,48 @@ export default function AdminAprobaciones() {
     };
 
     const approveTicketTransaction = async (ticket) => {
-        // Crear pago
-        const { error: pagoError } = await supabase
-            .from('pagos')
-            .insert({
+        try {
+            console.log('Procesando aprobación para ticket:', ticket);
+
+            // Preparar datos del pago
+            const pagoData = {
                 alumno_id: ticket.alumno_id,
-                monto: ticket.monto,
+                monto: Number(ticket.monto), // Asegurar que sea número
                 estado: 'PAGADO',
                 tipo_item: ticket.tipo_item,
-                item_id: ticket.item_id,
+                item_id: ticket.item_id || null, // Asegurar null si es undefined
                 fecha_pago: ticket.fecha_pago,
                 metodo_pago: 'transferencia',
                 comprobante_url: ticket.comprobante_url,
                 aprobado_por: user?.id,
                 fecha_aprobacion: new Date().toISOString()
-            });
+            };
 
-        if (pagoError) throw pagoError;
+            // Crear pago
+            const { error: pagoError } = await supabase
+                .from('pagos')
+                .insert(pagoData);
 
-        // Actualizar ticket
-        const { error: ticketError } = await supabase
-            .from('tickets_pago')
-            .update({ estado: 'aprobado' })
-            .eq('id', ticket.id);
+            if (pagoError) {
+                console.error('Error Supabase al insertar pago:', JSON.stringify(pagoError));
+                throw new Error(`Error DB Pagos: ${pagoError.message}`);
+            }
 
-        if (ticketError) throw ticketError;
+            // Actualizar ticket
+            const { error: ticketError } = await supabase
+                .from('tickets_pago')
+                .update({ estado: 'aprobado' })
+                .eq('id', ticket.id);
+
+            if (ticketError) {
+                console.error('Error Supabase al actualizar ticket:', JSON.stringify(ticketError));
+                throw new Error(`Error DB Tickets: ${ticketError.message}`);
+            }
+        } catch (error) {
+            // Re-lanzar el error con más contexto si es posible
+            console.error('Error en transacción de aprobación:', error);
+            throw error;
+        }
     };
 
     const handleApproveSingle = async (ticket) => {
