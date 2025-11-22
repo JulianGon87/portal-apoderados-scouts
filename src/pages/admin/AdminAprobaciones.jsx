@@ -214,7 +214,7 @@ export default function AdminAprobaciones() {
                 mes: ticket.tipo_item === 'cuota_mensual' ? (fechaPagoDate.getMonth() + 1) : null, // Opcional: agregar mes si es cuota
                 metodo_pago: 'transferencia',
                 comprobante_url: ticket.comprobante_url,
-                aprobado_por: user?.id,
+                aprobado_por: null, // Dejamos null temporalmente para evitar error de FK si el usuario no está en tabla users
                 fecha_aprobacion: new Date().toISOString()
             };
 
