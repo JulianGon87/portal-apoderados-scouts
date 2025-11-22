@@ -197,34 +197,38 @@ export default function AdminAprobaciones() {
         );
     };
 
+    const approveTicketTransaction = async (ticket) => {
+        // Crear pago
+        const { error: pagoError } = await supabase
+            .from('pagos')
+            .insert({
+                alumno_id: ticket.alumno_id,
+                monto: ticket.monto,
+                estado: 'PAGADO',
+                tipo_item: ticket.tipo_item,
+                item_id: ticket.item_id,
+                fecha_pago: ticket.fecha_pago,
+                metodo_pago: 'transferencia',
+                comprobante_url: ticket.comprobante_url,
+                aprobado_por: user?.id,
+                fecha_aprobacion: new Date().toISOString()
+            });
+
+        if (pagoError) throw pagoError;
+
+        // Actualizar ticket
+        const { error: ticketError } = await supabase
+            .from('tickets_pago')
+            .update({ estado: 'aprobado' })
+            .eq('id', ticket.id);
+
+        if (ticketError) throw ticketError;
+    };
+
     const handleApproveSingle = async (ticket) => {
         setApprovingId(ticket.id);
         try {
-            // Crear pago
-            const { error: pagoError } = await supabase
-                .from('pagos')
-                .insert({
-                    alumno_id: ticket.alumno_id,
-                    monto: ticket.monto,
-                    estado: 'PAGADO',
-                    tipo_item: ticket.tipo_item,
-                    item_id: ticket.item_id,
-                    fecha_pago: ticket.fecha_pago,
-                    metodo_pago: 'transferencia',
-                    comprobante_url: ticket.comprobante_url,
-                    aprobado_por: user?.id,
-                    fecha_aprobacion: new Date().toISOString()
-                });
-
-            if (pagoError) throw pagoError;
-
-            // Actualizar ticket
-            const { error: ticketError } = await supabase
-                .from('tickets_pago')
-                .update({ estado: 'aprobado' })
-                .eq('id', ticket.id);
-
-            if (ticketError) throw ticketError;
+            await approveTicketTransaction(ticket);
 
             addToast('✅ Ticket aprobado exitosamente', 'success');
             setShowPreviewModal(false);
@@ -252,32 +256,7 @@ export default function AdminAprobaciones() {
                 if (!ticket) continue;
 
                 try {
-                    // Crear pago
-                    const { error: pagoError } = await supabase
-                        .from('pagos')
-                        .insert({
-                            alumno_id: ticket.alumno_id,
-                            monto: ticket.monto,
-                            estado: 'PAGADO',
-                            tipo_item: ticket.tipo_item,
-                            item_id: ticket.item_id,
-                            fecha_pago: ticket.fecha_pago,
-                            metodo_pago: 'transferencia',
-                            comprobante_url: ticket.comprobante_url,
-                            aprobado_por: user?.id,
-                            fecha_aprobacion: new Date().toISOString()
-                        });
-
-                    if (pagoError) throw pagoError;
-
-                    // Actualizar ticket
-                    const { error: ticketError } = await supabase
-                        .from('tickets_pago')
-                        .update({ estado: 'aprobado' })
-                        .eq('id', ticketId);
-
-                    if (ticketError) throw ticketError;
-
+                    await approveTicketTransaction(ticket);
                     successCount++;
                 } catch (error) {
                     console.error(`Error al aprobar ticket ${ticketId}:`, error);
