@@ -119,14 +119,14 @@ export default function StudentProfilePage() {
                 <div className="max-w-4xl mx-auto">
                     <button
                         onClick={() => navigate('/home')}
-                        className="mb-6 flex items-center gap-2 text-white/80 hover:text-white transition-colors font-medium"
+                        className="mb-6 flex items-center gap-2 text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all font-medium backdrop-blur-sm border border-white/10 shadow-sm"
                     >
                         ← Volver al Inicio
                     </button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
                         <div className="relative group">
-                            <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-4xl border-4 border-white/30 shadow-xl overflow-hidden">
+                            <div className="w-32 h-32 md:w-40 md:h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-5xl border-4 border-white/30 shadow-xl overflow-hidden transition-all duration-300">
                                 {alumno.foto_url ? (
                                     <img src={alumno.foto_url} alt="Foto de perfil" className="w-full h-full object-cover" />
                                 ) : (
@@ -181,7 +181,7 @@ export default function StudentProfilePage() {
                             </label>
                         </div>
                         <div className="text-center md:text-left flex-grow">
-                            <h1 className="text-3xl md:text-4xl font-bold font-display">{alumno.nombre} {alumno.apellidos_alumno}</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold font-display">{alumno.nombre} {alumno.apellidos_alumno}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2 text-white/90">
                                 <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm backdrop-blur-sm" title="Sección">
                                     🏕️ <span className="opacity-75 mr-1">Sección:</span> {alumno.seccion || 'Sin Sección'}
@@ -197,10 +197,10 @@ export default function StudentProfilePage() {
 
                         {/* Estado General Badge + Botón Pagar */}
                         <div className="flex flex-col gap-3 items-end">
-                            <div className={`px-6 py-3 rounded-xl backdrop-blur-md border border-white/20 shadow-lg ${totalDebt === 0 ? 'bg-green-500/20 text-green-50' : 'bg-red-500/20 text-red-50'
+                            <div className={`px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg ${totalDebt === 0 ? 'bg-green-500/20 text-green-50' : 'bg-red-500/20 text-red-50'
                                 }`}>
-                                <p className="text-xs uppercase tracking-wider font-bold opacity-80">Estado Financiero</p>
-                                <p className="text-2xl font-bold mt-1">
+                                <p className="text-[10px] uppercase tracking-wider font-bold opacity-80">Estado Financiero</p>
+                                <p className="text-lg font-bold mt-0.5">
                                     {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')} Deuda`}
                                 </p>
                             </div>

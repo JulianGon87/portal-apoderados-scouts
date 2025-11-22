@@ -56,8 +56,8 @@ export default function Layout() {
                                 alt="Logo"
                                 className="h-14 w-auto"
                             />
-                            <span className="text-xl font-bold text-white font-outfit tracking-tight">
-                                Portal grupo Scout ADMAPU
+                            <span className="text-3xl font-bold text-white font-outfit tracking-tight">
+                                ADMAPU
                             </span>
                         </div>
 
