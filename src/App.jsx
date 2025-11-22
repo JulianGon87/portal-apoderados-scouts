@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import NotFoundPage from './pages/NotFoundPage';
 import StudentProfilePage from './pages/StudentProfilePage';
 import AdminLayout from './components/admin/AdminLayout';
+import ProtectedRoute from './components/admin/ProtectedRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ItemsCobro from './pages/admin/ItemsCobro';
 import AdminTickets from './pages/admin/AdminTickets';
@@ -25,12 +26,28 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
-        {/* Rutas de Admin */}
+        {/* Rutas de Admin con Protección Granular */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="items-cobro" element={<ItemsCobro />} />
-          <Route path="tickets" element={<AdminTickets />} />
-          <Route path="aprobaciones" element={<AdminAprobaciones />} />
+          <Route index element={
+            <ProtectedRoute requiredPermissions="ver_dashboard">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="items-cobro" element={
+            <ProtectedRoute requiredPermissions={['crear_items_cobro', 'editar_items_cobro']}>
+              <ItemsCobro />
+            </ProtectedRoute>
+          } />
+          <Route path="tickets" element={
+            <ProtectedRoute requiredPermissions="gestionar_tickets">
+              <AdminTickets />
+            </ProtectedRoute>
+          } />
+          <Route path="aprobaciones" element={
+            <ProtectedRoute requiredPermissions={['aprobar_pagos', 'ver_metricas']}>
+              <AdminAprobaciones />
+            </ProtectedRoute>
+          } />
         </Route>
       </Routes>
       <Analytics />

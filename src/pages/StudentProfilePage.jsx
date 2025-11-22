@@ -552,6 +552,7 @@ export default function StudentProfilePage() {
                             <TicketPagoForm
                                 alumno={alumno}
                                 items={items}
+                                pagos={alumno.pagos || []}
                                 onSuccess={handleTicketSuccess}
                                 onCancel={() => setShowTicketForm(false)}
                             />

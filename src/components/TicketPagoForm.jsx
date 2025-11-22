@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { supabase } from '../supabase/client';
 
-const TicketPagoForm = ({ alumno, items, onSuccess, onCancel }) => {
+const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         tipo_item: 'cuota_mensual',
@@ -65,8 +65,24 @@ const TicketPagoForm = ({ alumno, items, onSuccess, onCancel }) => {
         }
     };
 
-    // Filtrar items según el tipo seleccionado para el dropdown específico
-    const itemsFiltrados = items.filter(i => i.tipo_item === formData.tipo_item);
+    // Filtrar items según el tipo seleccionado y que NO estén pagados
+    const itemsFiltrados = useMemo(() => {
+        return items.filter(item => {
+            // Filtrar por tipo
+            if (item.tipo_item !== formData.tipo_item) return false;
+
+            // Verificar si ya está pagado
+            const isPaid = pagos.some(p =>
+                p.estado === 'PAGADO' &&
+                p.anio === item.anio &&
+                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
+            );
+
+            // Solo incluir si NO está pagado
+            return !isPaid;
+        });
+    }, [items, formData.tipo_item, pagos]);
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">

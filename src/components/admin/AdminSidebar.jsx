@@ -56,7 +56,7 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
         }
     ];
 
-    const visibleItems = navItems.filter(item => hasPermission ? hasPermission(item.permission) : true);
+    const visibleItems = navItems.filter(item => hasPermission(item.permission));
 
     return (
         <>
