@@ -1,22 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client';
 import TicketPagoForm from '../components/TicketPagoForm';
 
-const MONTHS = [
-    { id: 3, name: 'Marzo' },
-    { id: 4, name: 'Abril' },
-    { id: 5, name: 'Mayo' },
-    { id: 6, name: 'Junio' },
-    { id: 7, name: 'Julio' },
-    { id: 8, name: 'Agosto' },
-    { id: 9, name: 'Septiembre' },
-    { id: 10, name: 'Octubre' },
-    { id: 11, name: 'Noviembre' },
-    { id: 12, name: 'Diciembre' },
-];
-
-const CUOTA_VALUE = 5000;
+import { useStudentFinance } from '../hooks/useStudentFinance';
 
 const formatRut = (rut) => {
     if (!rut) return '';
@@ -121,72 +108,7 @@ export default function StudentProfilePage() {
         window.location.reload();
     };
 
-    const { paymentGroups, totalDebt, pendingCount } = useMemo(() => {
-        if (!alumno || !alumno.pagos) return { paymentGroups: { mensual: { details: [] }, otros: [] }, totalDebt: 0, pendingCount: 0 };
-
-        const pagos = alumno.pagos;
-
-        // 1. Mapear items a estado de pago
-        const itemsWithStatus = items.map(item => {
-            const isPaid = pagos.some(p =>
-                p.estado === 'PAGADO' &&
-                p.anio === item.anio &&
-                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
-                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
-            );
-
-            return {
-                ...item,
-                isPaid
-            };
-        });
-
-        // 2. Agrupar Cuotas Mensuales
-        const cuotasMensuales = itemsWithStatus
-            .filter(i => i.tipo_item === 'cuota_mensual')
-            .sort((a, b) => a.mes - b.mes);
-
-        const mensualDetails = MONTHS.map(month => {
-            const itemParaMes = cuotasMensuales.find(c => c.mes === month.id);
-
-            if (itemParaMes) {
-                return {
-                    monthId: month.id,
-                    monthName: month.name,
-                    isPaid: itemParaMes.isPaid,
-                    amount: itemParaMes.monto,
-                    hasItem: true,
-                    descripcion: itemParaMes.descripcion
-                };
-            }
-
-            return {
-                monthId: month.id,
-                monthName: month.name,
-                isPaid: false,
-                hasItem: false
-            };
-        });
-
-        // 3. Agrupar Otros Pagos (Mostrar todos, pagados y pendientes)
-        const otrosPagos = itemsWithStatus.filter(i => i.tipo_item !== 'cuota_mensual');
-
-        // 4. Calcular Deuda
-        const deudaCuotas = cuotasMensuales.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
-        const deudaOtros = otrosPagos.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
-
-        const totalDebt = deudaCuotas + deudaOtros;
-        const pendingCount = itemsWithStatus.filter(i => !i.isPaid).length;
-
-        return {
-            paymentGroups: {
-                mensual: { details: mensualDetails },
-                otros: otrosPagos
-            },
-            totalDebt,
-            pendingCount
-        };
-    }, [alumno, items]);
+    const { paymentGroups, totalDebt, pendingCount } = useStudentFinance(items, alumno?.pagos);
 
     if (loading) {
         return (
