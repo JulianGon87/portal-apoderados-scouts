@@ -124,7 +124,7 @@ export default function StudentProfilePage() {
                         ← Volver al Inicio
                     </button>
 
-                    <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+                    <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 pb-4">
                         <div className="relative group">
                             <div className="w-32 h-32 md:w-40 md:h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-5xl border-4 border-white/30 shadow-xl overflow-hidden transition-all duration-300">
                                 {alumno.foto_url ? (
@@ -180,8 +180,8 @@ export default function StudentProfilePage() {
                                 />
                             </label>
                         </div>
-                        <div className="text-center md:text-left flex-grow">
-                            <h1 className="text-2xl md:text-3xl font-bold font-display">{alumno.nombre} {alumno.apellidos_alumno}</h1>
+                        <div className="text-center md:text-left flex-grow w-full md:w-auto mt-4 md:mt-0">
+                            <h1 className="text-xl md:text-3xl font-bold font-display leading-tight break-words">{alumno.nombre} {alumno.apellidos_alumno}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2 text-white/90">
                                 <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm backdrop-blur-sm" title="Sección">
                                     🏕️ <span className="opacity-75 mr-1">Sección:</span> {alumno.seccion || 'Sin Sección'}

@@ -65,10 +65,10 @@ export default function Layout() {
                         <div className="flex items-center space-x-3">
                             {apoderado && !isLoginPage && (
                                 <>
-                                    {/* User Name - Visible on mobile but simplified */}
-                                    <div className="flex items-center text-white/90 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-sm">
+                                    {/* User Name - Visible on desktop only to save space on mobile */}
+                                    <div className="hidden md:flex items-center text-white/90 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-sm">
                                         <User className="w-4 h-4 mr-2 text-scout-gold" />
-                                        <span className="text-sm font-medium max-w-[100px] md:max-w-none truncate">
+                                        <span className="text-sm font-medium">
                                             {apoderado.nombre}
                                         </span>
                                     </div>
