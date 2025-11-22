@@ -202,13 +202,16 @@ export default function AdminAprobaciones() {
             console.log('Procesando aprobación para ticket:', ticket);
 
             // Preparar datos del pago
+            const fechaPagoDate = new Date(ticket.fecha_pago);
             const pagoData = {
                 alumno_id: ticket.alumno_id,
-                monto: Number(ticket.monto), // Asegurar que sea número
+                monto: Number(ticket.monto),
                 estado: 'PAGADO',
                 tipo_item: ticket.tipo_item,
-                item_id: ticket.item_id || null, // Asegurar null si es undefined
+                item_id: ticket.item_id || null,
                 fecha_pago: ticket.fecha_pago,
+                anio: fechaPagoDate.getFullYear(), // Agregamos el año requerido
+                mes: ticket.tipo_item === 'cuota_mensual' ? (fechaPagoDate.getMonth() + 1) : null, // Opcional: agregar mes si es cuota
                 metodo_pago: 'transferencia',
                 comprobante_url: ticket.comprobante_url,
                 aprobado_por: user?.id,
