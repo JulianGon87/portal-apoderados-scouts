@@ -1,10 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../supabase/client';
 
 const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
+
+    // Calcular deudas pendientes al inicio
+    const deudasPendientes = useMemo(() => {
+        return items.filter(item => {
+            // Verificar si ya está pagado
+            const isPaid = pagos.some(p =>
+                p.estado === 'PAGADO' &&
+                p.anio === item.anio &&
+                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
+            );
+            return !isPaid;
+        });
+    }, [items, pagos]);
+
     const [formData, setFormData] = useState({
-        tipo_item: 'cuota_mensual',
+        tipo_item: '',
         item_id: '',
         monto: '',
         fecha_pago: new Date().toISOString().split('T')[0],
@@ -12,11 +27,44 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
     });
     const [file, setFile] = useState(null);
 
+    // Efecto para seleccionar automáticamente la primera deuda si existe
+    useEffect(() => {
+        if (deudasPendientes.length > 0 && !formData.item_id) {
+            const primeraDeuda = deudasPendientes[0];
+            setFormData(prev => ({
+                ...prev,
+                tipo_item: primeraDeuda.tipo_item,
+                item_id: primeraDeuda.id,
+                monto: primeraDeuda.monto
+            }));
+        }
+    }, [deudasPendientes]);
+
+    const handleDeudaChange = (e) => {
+        const selectedId = e.target.value;
+        if (!selectedId) return;
+
+        const deuda = deudasPendientes.find(d => d.id === selectedId);
+        if (deuda) {
+            setFormData({
+                ...formData,
+                tipo_item: deuda.tipo_item,
+                item_id: deuda.id,
+                monto: deuda.monto
+            });
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!file) {
             alert('Debes subir un comprobante de pago');
+            return;
+        }
+
+        if (!formData.item_id) {
+            alert('Debes seleccionar una deuda a pagar');
             return;
         }
 
@@ -44,12 +92,12 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                 .insert([{
                     alumno_id: alumno.id,
                     tipo_item: formData.tipo_item,
-                    item_id: formData.item_id || null,
+                    item_id: formData.item_id, // Ahora siempre tendrá ID
                     monto: parseInt(formData.monto),
                     fecha_pago: formData.fecha_pago,
                     comprobante_url: publicUrl,
                     estado: 'pendiente',
-                    comentario_admin: formData.comentario // Usamos este campo temporalmente para notas del usuario si es necesario, o crear uno nuevo
+                    comentario_admin: formData.comentario
                 }]);
 
             if (ticketError) throw ticketError;
@@ -65,90 +113,56 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
         }
     };
 
-    // Filtrar items según el tipo seleccionado y que NO estén pagados
-    const itemsFiltrados = useMemo(() => {
-        return items.filter(item => {
-            // Filtrar por tipo
-            if (item.tipo_item !== formData.tipo_item) return false;
-
-            // Verificar si ya está pagado
-            const isPaid = pagos.some(p =>
-                p.estado === 'PAGADO' &&
-                p.anio === item.anio &&
-                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
-                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
-            );
-
-            // Solo incluir si NO está pagado
-            return !isPaid;
-        });
-    }, [items, formData.tipo_item, pagos]);
+    if (deudasPendientes.length === 0) {
+        return (
+            <div className="text-center py-6">
+                <div className="text-green-500 text-5xl mb-4">🎉</div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">¡Estás al día!</h3>
+                <p className="text-gray-600 mb-6">No tienes deudas pendientes para informar.</p>
+                <button
+                    onClick={onCancel}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                    Cerrar
+                </button>
+            </div>
+        );
+    }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ¿Qué estás pagando?
+                    Selecciona la deuda a pagar
                 </label>
                 <select
-                    value={formData.tipo_item}
-                    onChange={(e) => setFormData({ ...formData, tipo_item: e.target.value, item_id: '' })}
+                    value={formData.item_id}
+                    onChange={handleDeudaChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
                     required
                 >
-                    <option value="cuota_mensual">Cuota Mensual</option>
-                    <option value="rifa">Rifa</option>
-                    <option value="evento">Evento</option>
-                    <option value="campamento">Campamento</option>
-                    <option value="parche">Parche</option>
-                    <option value="otro">Otro</option>
+                    {deudasPendientes.map(item => (
+                        <option key={item.id} value={item.id}>
+                            {item.descripcion} ({item.tipo_item.replace('_', ' ')}) - ${item.monto.toLocaleString('es-CL')}
+                        </option>
+                    ))}
                 </select>
             </div>
 
-            {/* Selector de Item Específico (si hay items disponibles para ese tipo) */}
-            {itemsFiltrados.length > 0 && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Selecciona el detalle (Opcional)
-                    </label>
-                    <select
-                        value={formData.item_id}
-                        onChange={(e) => {
-                            const item = items.find(i => i.id === e.target.value);
-                            setFormData({
-                                ...formData,
-                                item_id: e.target.value,
-                                monto: item ? item.monto : formData.monto
-                            });
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                    >
-                        <option value="">-- Seleccionar --</option>
-                        {itemsFiltrados.map(item => (
-                            <option key={item.id} value={item.id}>
-                                {item.descripcion} - ${item.monto.toLocaleString('es-CL')}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
-
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Monto Pagado
+                    Monto a Pagar
                 </label>
                 <div className="relative">
                     <span className="absolute left-3 top-2 text-gray-500">$</span>
                     <input
                         type="number"
                         value={formData.monto}
-                        onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                        placeholder="5000"
-                        required
-                        min="1"
+                        readOnly // Hacemos el monto de solo lectura para evitar errores
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                     />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">El monto corresponde al valor oficial de la deuda.</p>
             </div>
 
             <div>
