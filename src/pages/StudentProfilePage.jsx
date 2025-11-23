@@ -279,44 +279,32 @@ export default function StudentProfilePage() {
 
                                 {paymentTab === 'mensual' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {paymentGroups.mensual.details.map((status) => (
-                                            <div
-                                                key={status.monthId}
-                                                className={`flex justify-between items-center p-4 rounded-xl border transition-all hover:shadow-md ${!status.hasItem
-                                                    ? 'bg-gray-50 border-gray-200 opacity-60'
-                                                    : status.isPaid
-                                                        ? 'bg-green-50 border-green-200'
-                                                        : 'bg-white border-red-200 shadow-sm'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${!status.hasItem
-                                                        ? 'bg-gray-200 text-gray-400'
-                                                        : status.isPaid
-                                                            ? 'bg-green-100 text-green-600'
-                                                            : 'bg-red-100 text-red-600'
-                                                        }`}>
-                                                        {status.isPaid ? '✓' : !status.hasItem ? '-' : '!'}
-                                                    </div>
-                                                    <span className={`font-bold text-lg ${status.hasItem ? 'text-gray-700' : 'text-gray-400'}`}>
-                                                        {status.monthName}
-                                                    </span>
+                                        {paymentGroups.mensual.details
+                                            .filter(month => month.items && month.items.length > 0)
+                                            .map((month) => (
+                                                <div key={month.monthId} className="p-4 rounded-xl border bg-white shadow-sm">
+                                                    <h3 className="font-bold text-lg mb-2 text-gray-800">{month.monthName}</h3>
+                                                    <ul className="space-y-2">
+                                                        {month.items.map((item) => (
+                                                            <li
+                                                                key={item.id}
+                                                                className={`flex justify-between items-center p-2 rounded ${item.isPaid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`w-2 h-2 rounded-full ${item.isPaid ? 'bg-green-600' : 'bg-red-600'}`} />
+                                                                    <span className="font-medium text-gray-800 text-sm">{item.descripcion}</span>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <span className="font-bold text-sm">${item.monto.toLocaleString('es-CL')}</span>
+                                                                    <span className={`ml-2 text-xs font-semibold ${item.isPaid ? 'text-green-600' : 'text-red-600'}`}>
+                                                                        {item.isPaid ? 'Pagado' : 'Pendiente'}
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className={`block text-sm font-bold ${status.hasItem
-                                                        ? status.isPaid
-                                                            ? 'text-green-600'
-                                                            : 'text-red-600'
-                                                        : 'text-gray-400'
-                                                        }`}>
-                                                        {status.isPaid ? 'PAGADO' : status.hasItem ? `$${status.amount.toLocaleString('es-CL')}` : 'No asignado'}
-                                                    </span>
-                                                    {status.hasItem && !status.isPaid && (
-                                                        <span className="text-xs text-red-400">Pendiente</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 )}
 

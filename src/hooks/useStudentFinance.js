@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 
+// Meses que se muestran en la UI (todo el año)
 const MONTHS = [
+    { id: 1, name: 'Enero' },
+    { id: 2, name: 'Febrero' },
     { id: 3, name: 'Marzo' },
     { id: 4, name: 'Abril' },
     { id: 5, name: 'Mayo' },
@@ -13,73 +16,81 @@ const MONTHS = [
     { id: 12, name: 'Diciembre' },
 ];
 
+/**
+ * Hook que calcula el estado financiero de un alumno.
+ * - Agrupa cuotas mensuales por mes y permite varios ítems por mismo mes.
+ * - Calcula deuda total y cantidad de ítems pendientes.
+ */
 export const useStudentFinance = (items = [], pagos = []) => {
     return useMemo(() => {
-        // 1. Mapear items a estado de pago
-        const itemsWithStatus = items.map(item => {
-            // Buscar si existe un pago con estado PAGADO para este item
-            // Coincidencia por: tipo, año, mes (si aplica) y monto aproximado
-            const isPaid = pagos.some(p =>
-                p.estado === 'PAGADO' &&
-                p.anio === item.anio &&
-                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
-                // Si es cuota mensual, el tipo puede no estar en pagos antiguos, así que asumimos cuota si tiene mes
-                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
-            );
+        // 1️⃣ Marcar cada ítem como pagado / no pagado
+        const itemsWithStatus = items.map(item => ({
+            ...item,
+            isPaid: pagos.some(p => {
+                if (p.estado !== 'PAGADO') return false;
 
-            return {
-                ...item,
-                isPaid
-            };
-        });
+                // PRIORIDAD 1: Coincidencia exacta por ID (Lógica robusta)
+                if (p.item_id) {
+                    return p.item_id === item.id;
+                }
 
-        // 2. Agrupar Cuotas Mensuales
+                // PRIORIDAD 2: Compatibilidad con pagos antiguos (Legacy)
+                // Solo si el pago NO tiene ID asociado, intentamos calzarlo por fecha/tipo Y MONTO.
+                // Agregamos validación de monto para evitar falsos positivos con deudas nuevas.
+                return (
+                    !p.item_id && // Solo si el pago no está vinculado a nada más
+                    p.anio === item.anio &&
+                    (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                    (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual')) &&
+                    p.monto === item.monto // NUEVO: El monto debe coincidir para asumir el pago
+                );
+            }),
+        }));
+
+        // 2️⃣ Filtrar solo cuotas mensuales y ordenar por mes
         const cuotasMensuales = itemsWithStatus
             .filter(i => i.tipo_item === 'cuota_mensual')
             .sort((a, b) => a.mes - b.mes);
 
-        // Rellenar meses faltantes para visualización
+        // 3️⃣ Agrupar por mes → cada mes contiene un array de ítems
         const mensualDetails = MONTHS.map(month => {
-            const itemParaMes = cuotasMensuales.find(c => c.mes === month.id);
-
-            if (itemParaMes) {
-                return {
-                    monthId: month.id,
-                    monthName: month.name,
-                    isPaid: itemParaMes.isPaid,
-                    amount: itemParaMes.monto,
-                    hasItem: true,
-                    descripcion: itemParaMes.descripcion
-                };
-            }
-
-            // Si no hay item para este mes, no es cobrable aún o no existe cobro
+            const itemsDelMes = cuotasMensuales.filter(c => c.mes === month.id);
             return {
                 monthId: month.id,
                 monthName: month.name,
-                isPaid: false, // Irrelevante si hasItem es false
-                hasItem: false
+                // Si no hay ítems, la lista queda vacía y la UI mostrará "Sin cuotas asignadas"
+                items: itemsDelMes.map(i => ({
+                    id: i.id,
+                    descripcion: i.descripcion,
+                    monto: i.monto,
+                    isPaid: i.isPaid,
+                    seccion: i.seccion,
+                })),
             };
         });
 
-        // 3. Agrupar Otros Pagos
+        // 4️⃣ Otros pagos (no mensuales)
         const otrosPagos = itemsWithStatus.filter(i => i.tipo_item !== 'cuota_mensual');
 
-        // 4. Calcular Deuda
-        // Solo sumar items que existen y no están pagados
-        const deudaCuotas = cuotasMensuales.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
-        const deudaOtros = otrosPagos.filter(i => !i.isPaid).reduce((acc, i) => acc + i.monto, 0);
-
+        // 5️⃣ Cálculo de deuda total
+        const deudaCuotas = cuotasMensuales
+            .filter(i => !i.isPaid)
+            .reduce((acc, i) => acc + i.monto, 0);
+        const deudaOtros = otrosPagos
+            .filter(i => !i.isPaid)
+            .reduce((acc, i) => acc + i.monto, 0);
         const totalDebt = deudaCuotas + deudaOtros;
+
+        // 6️⃣ Conteo de ítems pendientes (todos los ítems, no solo uno por mes)
         const pendingCount = itemsWithStatus.filter(i => !i.isPaid).length;
 
         return {
             paymentGroups: {
                 mensual: { details: mensualDetails },
-                otros: otrosPagos
+                otros: otrosPagos,
             },
             totalDebt,
-            pendingCount
+            pendingCount,
         };
     }, [items, pagos]);
 };

@@ -69,7 +69,7 @@ export default function HomePage() {
         const alumnosWithItems = (alumnosData || []).map(alumno => {
           // Filtrar items que aplican a este alumno (por sección o globales)
           const applicableItems = (itemsData || []).filter(item => {
-            return !item.seccion || item.seccion === alumno.seccion;
+            return !item.seccion || item.seccion.toUpperCase() === (alumno.seccion || '').toUpperCase();
           });
 
           return {

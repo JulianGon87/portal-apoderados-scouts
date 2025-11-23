@@ -1,13 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../supabase/client';
 
+const MONTH_NAMES = [
+    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
 const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
 
     // Calcular deudas pendientes al inicio
     const deudasPendientes = useMemo(() => {
         return items.filter(item => {
             // Verificar si ya está pagado
+            // NOTA: Mantenemos la lógica actual, pero idealmente debería ser por ID estricto en el futuro
             const isPaid = pagos.some(p =>
                 p.estado === 'PAGADO' &&
                 p.anio === item.anio &&
@@ -15,43 +22,41 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                 (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
             );
             return !isPaid;
+        }).sort((a, b) => {
+            // Ordenar: primero por mes (si existe), luego por descripción
+            if (a.mes && b.mes) return a.mes - b.mes;
+            return 0;
         });
     }, [items, pagos]);
 
     const [formData, setFormData] = useState({
-        tipo_item: '',
-        item_id: '',
-        monto: '',
         fecha_pago: new Date().toISOString().split('T')[0],
         comentario: ''
     });
     const [file, setFile] = useState(null);
 
-    // Efecto para seleccionar automáticamente la primera deuda si existe
-    useEffect(() => {
-        if (deudasPendientes.length > 0 && !formData.item_id) {
-            const primeraDeuda = deudasPendientes[0];
-            setFormData(prev => ({
-                ...prev,
-                tipo_item: primeraDeuda.tipo_item,
-                item_id: primeraDeuda.id,
-                monto: primeraDeuda.monto
-            }));
-        }
-    }, [deudasPendientes]);
+    // Calcular monto total basado en la selección
+    const totalMonto = useMemo(() => {
+        return deudasPendientes
+            .filter(item => selectedIds.includes(item.id))
+            .reduce((sum, item) => sum + item.monto, 0);
+    }, [deudasPendientes, selectedIds]);
 
-    const handleDeudaChange = (e) => {
-        const selectedId = e.target.value;
-        if (!selectedId) return;
+    const handleCheckboxChange = (id) => {
+        setSelectedIds(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(item => item !== id);
+            } else {
+                return [...prev, id];
+            }
+        });
+    };
 
-        const deuda = deudasPendientes.find(d => d.id === selectedId);
-        if (deuda) {
-            setFormData({
-                ...formData,
-                tipo_item: deuda.tipo_item,
-                item_id: deuda.id,
-                monto: deuda.monto
-            });
+    const handleSelectAll = () => {
+        if (selectedIds.length === deudasPendientes.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(deudasPendientes.map(d => d.id));
         }
     };
 
@@ -63,15 +68,15 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
             return;
         }
 
-        if (!formData.item_id) {
-            alert('Debes seleccionar una deuda a pagar');
+        if (selectedIds.length === 0) {
+            alert('Debes seleccionar al menos una deuda a pagar');
             return;
         }
 
         try {
             setLoading(true);
 
-            // 1. Subir imagen
+            // 1. Subir imagen (una sola vez para todos los tickets)
             const fileExt = file.name.split('.').pop();
             const fileName = `${alumno.id}-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
@@ -86,23 +91,28 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                 .from('comprobantes')
                 .getPublicUrl(filePath);
 
-            // 2. Crear Ticket
-            const { error: ticketError } = await supabase
-                .from('tickets_pago')
-                .insert([{
+            // 2. Crear Tickets (uno por cada deuda seleccionada)
+            const ticketsToInsert = selectedIds.map(id => {
+                const item = deudasPendientes.find(d => d.id === id);
+                return {
                     alumno_id: alumno.id,
-                    tipo_item: formData.tipo_item,
-                    item_id: formData.item_id, // Ahora siempre tendrá ID
-                    monto: parseInt(formData.monto),
+                    tipo_item: item.tipo_item,
+                    item_id: item.id,
+                    monto: item.monto,
                     fecha_pago: formData.fecha_pago,
                     comprobante_url: publicUrl,
                     estado: 'pendiente',
                     comentario_admin: formData.comentario
-                }]);
+                };
+            });
+
+            const { error: ticketError } = await supabase
+                .from('tickets_pago')
+                .insert(ticketsToInsert);
 
             if (ticketError) throw ticketError;
 
-            alert('Pago informado exitosamente. Espera la aprobación del administrador.');
+            alert(`Se han informado ${ticketsToInsert.length} pago(s) exitosamente.`);
             onSuccess();
 
         } catch (error) {
@@ -132,37 +142,64 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Selecciona la deuda a pagar
-                </label>
-                <select
-                    value={formData.item_id}
-                    onChange={handleDeudaChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                    required
-                >
+                <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                        Selecciona las deudas a pagar
+                    </label>
+                    <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="text-xs text-scout-blue hover:underline font-medium"
+                    >
+                        {selectedIds.length === deudasPendientes.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                    </button>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg divide-y divide-gray-100 bg-gray-50">
                     {deudasPendientes.map(item => (
-                        <option key={item.id} value={item.id}>
-                            {item.descripcion} ({item.tipo_item.replace('_', ' ')}) - ${item.monto.toLocaleString('es-CL')}
-                        </option>
+                        <label
+                            key={item.id}
+                            className={`flex items-center p-3 hover:bg-blue-50 cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedIds.includes(item.id)}
+                                onChange={() => handleCheckboxChange(item.id)}
+                                className="w-5 h-5 text-scout-blue rounded border-gray-300 focus:ring-scout-blue"
+                            />
+                            <div className="ml-3 flex-1">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-gray-800 text-sm">
+                                        {item.descripcion}
+                                    </span>
+                                    <span className="font-bold text-gray-700 text-sm">
+                                        ${item.monto.toLocaleString('es-CL')}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-gray-500 flex gap-2">
+                                    <span className="capitalize">{item.tipo_item.replace('_', ' ')}</span>
+                                    {item.mes && (
+                                        <span className="font-semibold text-scout-blue">
+                                            • {MONTH_NAMES[item.mes]}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </label>
                     ))}
-                </select>
+                </div>
+                <p className="text-right text-xs text-gray-500 mt-1">
+                    {selectedIds.length} ítem(s) seleccionado(s)
+                </p>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Monto a Pagar
-                </label>
-                <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-500">$</span>
-                    <input
-                        type="number"
-                        value={formData.monto}
-                        readOnly // Hacemos el monto de solo lectura para evitar errores
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-                    />
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center">
+                    <span className="text-blue-800 font-medium">Total a Pagar</span>
+                    <span className="text-2xl font-bold text-blue-900">
+                        ${totalMonto.toLocaleString('es-CL')}
+                    </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">El monto corresponde al valor oficial de la deuda.</p>
             </div>
 
             <div>
@@ -182,7 +219,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     Comprobante (Imagen o PDF)
                 </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-gray-50 relative">
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
                     <input
                         type="file"
                         onChange={(e) => setFile(e.target.files[0])}
@@ -214,7 +251,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                 <button
                     type="submit"
                     className="flex-1 px-4 py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
-                    disabled={loading}
+                    disabled={loading || selectedIds.length === 0}
                 >
                     {loading ? (
                         <>
@@ -222,7 +259,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
                             Enviando...
                         </>
                     ) : (
-                        'Informar Pago'
+                        `Informar Pago ($${totalMonto.toLocaleString('es-CL')})`
                     )}
                 </button>
             </div>
