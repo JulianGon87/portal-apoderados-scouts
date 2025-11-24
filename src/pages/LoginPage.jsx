@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { validateRut } from '../utils/rut.js';
 import { supabase } from '../supabase/client.js';
 import Footer from '../components/Footer';
+import PasswordInput from '../components/PasswordInput';
 
 const LoginForm = () => {
   const [rut, setRut] = useState('');
@@ -92,21 +93,17 @@ const LoginForm = () => {
             <p className="text-blue-700 text-sm">{message}</p>
           </div>
         )}
-        <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-2">
-            Nueva Contraseña (mín. 6 caracteres)
-          </label>
-          <input
-            id="new-password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            disabled={loading}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-scout-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            minLength={6}
-          />
-        </div>
+        <PasswordInput
+          id="new-password"
+          name="new-password"
+          label="Nueva Contraseña (mín. 6 caracteres)"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required={true}
+          placeholder="Mínimo 6 caracteres"
+          autoComplete="new-password"
+          className={loading ? "opacity-50 cursor-not-allowed" : ""}
+        />
         <button
           type="submit"
           className="btn-scout w-full"
@@ -147,21 +144,17 @@ const LoginForm = () => {
         />
       </div>
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-          Contraseña
-        </label>
-        <input
-          id="password"
-          type="password"
-          placeholder="Clave Inicial (123456)"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-scout-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-      </div>
+      <PasswordInput
+        id="password"
+        name="password"
+        label="Contraseña"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required={true}
+        placeholder="Clave Inicial (123456)"
+        autoComplete="current-password"
+        className={loading ? "opacity-50 cursor-not-allowed" : ""}
+      />
 
       <button
         type="submit"

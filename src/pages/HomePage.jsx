@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 import Footer from '../components/Footer';
 import AlumnoCard from '../components/AlumnoCard';
+import PasswordInput from '../components/PasswordInput';
 
 
 export default function HomePage() {
@@ -13,6 +14,26 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+
+  // Estados para modal de cambio de contraseña
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  // Estados para modal de editar perfil
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    telefono: '',
+    email: '',
+    nombre_contacto_emergencia: '',
+    telefono_contacto_emergencia: ''
+  });
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState(false);
 
   useEffect(() => {
     const fetchApoderadoData = async () => {
@@ -68,7 +89,6 @@ export default function HomePage() {
 
         // 4. Combinar alumnos con sus items aplicables
         const alumnosWithItems = (alumnosData || []).map(alumno => {
-          // Filtrar items que aplican a este alumno (por sección o globales)
           const applicableItems = (itemsData || []).filter(item => {
             return !item.seccion || item.seccion.toUpperCase() === (alumno.seccion || '').toUpperCase();
           });
@@ -95,6 +115,18 @@ export default function HomePage() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen es demasiado grande. Máximo 5MB');
+      return;
+    }
+
     try {
       setLoading(true);
       const fileExt = file.name.split('.').pop();
@@ -105,7 +137,10 @@ export default function HomePage() {
         .from('avatars')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Error de upload:', uploadError);
+        throw new Error(`Error al subir: ${uploadError.message}`);
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
@@ -116,13 +151,115 @@ export default function HomePage() {
         .update({ foto_url: publicUrl })
         .eq('id', apoderado.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error de actualización:', updateError);
+        throw new Error(`Error al actualizar perfil: ${updateError.message}`);
+      }
 
       setApoderado({ ...apoderado, foto_url: publicUrl });
+      alert('✅ Foto de perfil actualizada correctamente');
 
     } catch (error) {
       console.error('Error subiendo imagen:', error);
-      alert('Error al subir la imagen');
+      alert(error.message || 'Error al subir la imagen. Por favor intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Por favor completa todos los campos');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword
+      });
+
+      if (error) throw error;
+
+      setPasswordSuccess(true);
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordSuccess(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error cambiando contraseña:', error);
+      setPasswordError(error.message || 'Error al cambiar la contraseña');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar datos del perfil cuando se abre el modal
+  useEffect(() => {
+    if (showEditProfileModal && apoderado) {
+      setProfileForm({
+        telefono: apoderado.telefono || '',
+        email: apoderado.email || '',
+        nombre_contacto_emergencia: apoderado.nombre_contacto_emergencia || '',
+        telefono_contacto_emergencia: apoderado.telefono_contacto_emergencia || ''
+      });
+    }
+  }, [showEditProfileModal, apoderado]);
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setProfileError('');
+    setProfileSuccess(false);
+
+    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) {
+      setProfileError('Por favor ingresa un email válido');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          telefono: profileForm.telefono,
+          email: profileForm.email,
+          nombre_contacto_emergencia: profileForm.nombre_contacto_emergencia,
+          telefono_contacto_emergencia: profileForm.telefono_contacto_emergencia
+        })
+        .eq('id', apoderado.id);
+
+      if (error) throw error;
+
+      setApoderado({ ...apoderado, ...profileForm });
+      setProfileSuccess(true);
+
+      setTimeout(() => {
+        setShowEditProfileModal(false);
+        setProfileSuccess(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error actualizando perfil:', error);
+      setProfileError(error.message || 'Error al actualizar el perfil');
     } finally {
       setLoading(false);
     }
@@ -154,14 +291,13 @@ export default function HomePage() {
             />
           )}
 
-          {/* Sidebar: Perfil Unificado (Drawer en Móvil / Columna en Desktop) */}
+          {/* Sidebar: Perfil Unificado */}
           <div className={`
               fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out
               lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:bg-transparent lg:shadow-none lg:transform-none lg:transition-none lg:col-span-1 lg:block
               ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}>
 
-            {/* Botón Cerrar (Solo Móvil) */}
             <button
               onClick={() => setShowSidebar(false)}
               className="absolute top-4 right-4 p-2 bg-white/10 text-white rounded-full lg:hidden z-20 hover:bg-white/20"
@@ -173,16 +309,13 @@ export default function HomePage() {
 
             {apoderado && (
               <div className="bg-gradient-to-b from-scout-green to-green-950 h-full lg:h-auto lg:rounded-2xl shadow-xl overflow-y-auto lg:overflow-visible text-white relative">
-                {/* Decoración de fondo */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-white/5 opacity-50 rounded-b-[50%] transform -translate-y-1/2"></div>
 
                 <div className="p-6 text-center relative z-10">
-                  {/* Nombre (Ahora ARRIBA de la foto) */}
                   <h3 className="text-2xl font-bold mb-6 px-2 leading-tight">
                     {apoderado.nombre} {apoderado.apellidos}
                   </h3>
 
-                  {/* Avatar más grande y con opción de editar */}
                   <div className="relative inline-block mb-6">
                     <div className="w-40 h-40 mx-auto bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-6xl border-4 border-white/30 shadow-lg overflow-hidden">
                       {apoderado.foto_url ? (
@@ -191,7 +324,6 @@ export default function HomePage() {
                         <span>👤</span>
                       )}
                     </div>
-                    {/* Botón para cambiar foto */}
                     <label className="absolute bottom-2 right-2 bg-white text-scout-green p-3 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors group" title="Cambiar foto">
                       <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,7 +335,6 @@ export default function HomePage() {
 
                   <p className="text-green-100 text-sm mb-8">{apoderado.email}</p>
 
-                  {/* Botones de Acción - Más compactos horizontalmente */}
                   <div className="space-y-3 mb-8 px-8">
                     {isAdmin && (
                       <button
@@ -214,16 +345,21 @@ export default function HomePage() {
                       </button>
                     )}
 
-                    <button className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50">
+                    <button
+                      onClick={() => setShowPasswordModal(true)}
+                      className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50"
+                    >
                       🔒 Cambiar Contraseña
                     </button>
 
-                    <button className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50">
+                    <button
+                      onClick={() => setShowEditProfileModal(true)}
+                      className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50"
+                    >
                       ✏️ Editar Perfil
                     </button>
                   </div>
 
-                  {/* Información de Emergencia SOLAMENTE */}
                   {(apoderado.nombre_contacto_emergencia || apoderado.telefono_contacto_emergencia) && (
                     <div className="text-left bg-black/20 rounded-xl p-5 backdrop-blur-sm mx-4 border border-white/5">
                       <div className="flex items-start gap-4">
@@ -245,7 +381,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Columna Principal: Alumnos (Derecha) */}
+          {/* Columna Principal: Alumnos */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
             <div className="flex items-center justify-between border-b border-gray-200 pb-4">
               <h2 className="text-3xl font-display font-bold text-gray-800">
@@ -281,6 +417,210 @@ export default function HomePage() {
 
         </div>
       </main>
+
+      {/* Modal de Cambio de Contraseña */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordError('');
+                setPasswordSuccess(false);
+                setPasswordForm({ newPassword: '', confirmPassword: '' });
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Cambiar Contraseña</h2>
+
+            {passwordSuccess ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="text-5xl mb-2">✅</div>
+                <p className="text-green-800 font-medium">¡Contraseña actualizada exitosamente!</p>
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <PasswordInput
+                  id="newPassword"
+                  name="newPassword"
+                  label="Nueva Contraseña"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                />
+
+                <PasswordInput
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  label="Confirmar Contraseña"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  placeholder="Repite la nueva contraseña"
+                  autoComplete="new-password"
+                />
+
+                {passwordError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                    {passwordError}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setPasswordError('');
+                      setPasswordForm({ newPassword: '', confirmPassword: '' });
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-scout-green text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Perfil */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setShowEditProfileModal(false);
+                setProfileError('');
+                setProfileSuccess(false);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Editar Perfil</h2>
+
+            {profileSuccess ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="text-5xl mb-2">✅</div>
+                <p className="text-green-800 font-medium">¡Perfil actualizado exitosamente!</p>
+              </div>
+            ) : (
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div>
+                  <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono Personal
+                  </label>
+                  <input
+                    type="tel"
+                    id="telefono"
+                    name="telefono"
+                    value={profileForm.telefono}
+                    onChange={(e) => setProfileForm({ ...profileForm, telefono: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent"
+                    placeholder="+56 9 1234 5678"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent"
+                    placeholder="tu@email.com"
+                  />
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                    <span>🚨</span> Contacto de Emergencia
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="nombre_emergencia" className="block text-sm font-medium text-gray-700 mb-1">
+                        Nombre Completo
+                      </label>
+                      <input
+                        type="text"
+                        id="nombre_emergencia"
+                        name="nombre_emergencia"
+                        value={profileForm.nombre_contacto_emergencia}
+                        onChange={(e) => setProfileForm({ ...profileForm, nombre_contacto_emergencia: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent"
+                        placeholder="Nombre del contacto"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="telefono_emergencia" className="block text-sm font-medium text-gray-700 mb-1">
+                        Teléfono
+                      </label>
+                      <input
+                        type="tel"
+                        id="telefono_emergencia"
+                        name="telefono_emergencia"
+                        value={profileForm.telefono_contacto_emergencia}
+                        onChange={(e) => setProfileForm({ ...profileForm, telefono_contacto_emergencia: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent"
+                        placeholder="+56 9 1234 5678"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {profileError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                    {profileError}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditProfileModal(false);
+                      setProfileError('');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-scout-green text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer dark className="mt-auto" />
     </div>
