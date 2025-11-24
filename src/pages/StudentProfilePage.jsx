@@ -76,7 +76,7 @@ export default function StudentProfilePage() {
 
             const { data: ticketsData, error: ticketsError } = await supabase
                 .from('tickets_pago')
-                .select('*')
+                .select('*, items_pago(descripcion, mes)')
                 .eq('alumno_id', data.id)
                 .order('created_at', { ascending: false });
 
@@ -336,8 +336,8 @@ export default function StudentProfilePage() {
                                                             <p className="text-xl font-bold text-gray-800">
                                                                 ${pago.monto.toLocaleString('es-CL')}
                                                             </p>
-                                                            <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold mt-1">
-                                                                PAGADO
+                                                            <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {pago.isPaid ? 'PAGADO' : 'PENDIENTE'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -362,36 +362,93 @@ export default function StudentProfilePage() {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-4">
-                                                {tickets.map((ticket) => (
-                                                    <div key={ticket.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex justify-between items-start mb-2">
+                                                {Object.values(tickets.reduce((acc, ticket) => {
+                                                    // Agrupar por URL del comprobante o por ID si no tiene (para mostrar individuales)
+                                                    // Usamos una clave compuesta para mayor seguridad: URL + Fecha
+                                                    const key = ticket.comprobante_url
+                                                        ? `${ticket.comprobante_url}-${new Date(ticket.created_at).toDateString()}`
+                                                        : ticket.id;
+
+                                                    if (!acc[key]) {
+                                                        acc[key] = {
+                                                            ...ticket,
+                                                            items: [],
+                                                            totalMonto: 0,
+                                                            ids: []
+                                                        };
+                                                    }
+                                                    acc[key].items.push(ticket);
+                                                    acc[key].totalMonto += ticket.monto;
+                                                    acc[key].ids.push(ticket.id);
+                                                    // Si alguno del grupo está rechazado, el grupo se marca con alerta, pero mantenemos el estado del ticket principal para el color
+                                                    return acc;
+                                                }, {})).map((group) => (
+                                                    <div key={group.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                                                        <div className="flex justify-between items-start mb-3">
                                                             <div>
-                                                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-1 ${ticket.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
-                                                                    ticket.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
-                                                                        'bg-yellow-100 text-yellow-800'
-                                                                    }`}>
-                                                                    {ticket.estado}
-                                                                </span>
-                                                                <h4 className="font-bold text-gray-800 text-lg capitalize">
-                                                                    {ticket.tipo_item.replace('_', ' ')}
+                                                                <div className="flex flex-wrap gap-2 mb-2">
+                                                                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${group.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
+                                                                        group.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
+                                                                            'bg-yellow-100 text-yellow-800'
+                                                                        }`}>
+                                                                        {group.estado}
+                                                                    </span>
+                                                                    {group.items.length > 1 && (
+                                                                        <span className="inline-block px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                                            {group.items.length} ítems
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <h4 className="font-bold text-gray-800 text-lg">
+                                                                    {group.items.length > 1 ? 'Pago Agrupado' : group.tipo_item.replace('_', ' ')}
                                                                 </h4>
                                                             </div>
                                                             <p className="text-xl font-bold text-gray-800">
-                                                                ${ticket.monto.toLocaleString('es-CL')}
+                                                                ${group.totalMonto.toLocaleString('es-CL')}
                                                             </p>
                                                         </div>
-                                                        <div className="text-sm text-gray-600 flex justify-between items-center">
-                                                            <span>📅 {new Date(ticket.fecha_pago).toLocaleDateString('es-CL')}</span>
-                                                            {ticket.comprobante_url && (
-                                                                <a href={ticket.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+
+                                                        {/* Lista de ítems del grupo */}
+                                                        <div className="mb-3 bg-gray-50 rounded-lg p-3 text-sm">
+                                                            <ul className="space-y-1">
+                                                                {group.items.map((item, idx) => {
+                                                                    // Determinar qué mostrar entre paréntesis
+                                                                    let detalle = '';
+                                                                    if (item.items_pago) {
+                                                                        detalle = item.items_pago.descripcion;
+                                                                        // Si es cuota mensual y la descripción es genérica, intentamos usar el mes si tenemos un mapa de meses o si viene en el objeto
+                                                                        if (item.tipo_item === 'cuota_mensual' && item.items_pago.mes) {
+                                                                            const monthName = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][item.items_pago.mes - 1];
+                                                                            if (monthName) detalle = monthName;
+                                                                        }
+                                                                    }
+
+                                                                    return (
+                                                                        <li key={idx} className="flex justify-between text-gray-600">
+                                                                            <span className="capitalize">
+                                                                                • {item.tipo_item.replace('_', ' ')}
+                                                                                {detalle && <span className="text-gray-400 ml-1">({detalle})</span>}
+                                                                            </span>
+                                                                            <span>${item.monto.toLocaleString('es-CL')}</span>
+                                                                        </li>
+                                                                    );
+                                                                })}
+                                                            </ul>
+                                                        </div>
+
+                                                        <div className="text-sm text-gray-600 flex justify-between items-center pt-2 border-t border-gray-100">
+                                                            <span>📅 {new Date(group.fecha_pago).toLocaleDateString('es-CL')}</span>
+                                                            {group.comprobante_url && (
+                                                                <a href={group.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium">
                                                                     📎 Ver Comprobante
                                                                 </a>
                                                             )}
                                                         </div>
-                                                        {ticket.comentario_admin && (
-                                                            <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 border-l-4 border-gray-300">
-                                                                <span className="font-bold block text-xs text-gray-500 uppercase">Comentario Admin:</span>
-                                                                {ticket.comentario_admin}
+
+                                                        {group.comentario_admin && (
+                                                            <div className="mt-3 p-3 bg-red-50 rounded-lg text-sm text-red-700 border-l-4 border-red-300">
+                                                                <span className="font-bold block text-xs uppercase mb-1">Observación Admin:</span>
+                                                                {group.comentario_admin}
                                                             </div>
                                                         )}
                                                     </div>

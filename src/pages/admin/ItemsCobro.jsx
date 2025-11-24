@@ -142,10 +142,12 @@ const ItemsCobro = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Búsqueda */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="search-items" className="block text-sm font-medium text-gray-700 mb-1">
                             Buscar
                         </label>
                         <input
+                            id="search-items"
+                            name="search"
                             type="text"
                             placeholder="Buscar por descripción..."
                             value={filters.search}
@@ -156,10 +158,12 @@ const ItemsCobro = () => {
 
                     {/* Tipo */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="filter-tipo" className="block text-sm font-medium text-gray-700 mb-1">
                             Tipo
                         </label>
                         <select
+                            id="filter-tipo"
+                            name="tipo"
                             value={filters.tipo}
                             onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
@@ -175,10 +179,12 @@ const ItemsCobro = () => {
 
                     {/* Año */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="filter-anio" className="block text-sm font-medium text-gray-700 mb-1">
                             Año
                         </label>
                         <select
+                            id="filter-anio"
+                            name="anio"
                             value={filters.anio}
                             onChange={(e) => setFilters({ ...filters, anio: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"

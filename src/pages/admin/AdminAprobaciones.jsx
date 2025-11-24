@@ -22,6 +22,7 @@ export default function AdminAprobaciones() {
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [approvingId, setApprovingId] = useState(null);
     const [stats, setStats] = useState({ aprobados: 0, rechazados: 0, montoTotal: 0 });
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const itemsPerPage = 20;
 
@@ -261,10 +262,13 @@ export default function AdminAprobaciones() {
         }
     };
 
-    const handleApproveSelected = async () => {
+    const handleApproveSelected = () => {
         if (selectedItems.length === 0) return;
+        setShowConfirmModal(true);
+    };
 
-        if (!confirm(`¿Aprobar ${selectedItems.length} ticket(s) seleccionado(s)?`)) return;
+    const confirmApproveSelected = async () => {
+        setShowConfirmModal(false);
 
         setLoading(true);
         try {
@@ -390,6 +394,8 @@ export default function AdminAprobaciones() {
                 <div className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <input
+                            id="search-aprobaciones"
+                            name="search"
                             type="text"
                             placeholder="Buscar por nombre o RUT..."
                             value={searchTerm}
@@ -397,6 +403,8 @@ export default function AdminAprobaciones() {
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
                         />
                         <select
+                            id="filter-seccion"
+                            name="seccion"
                             value={filterSeccion}
                             onChange={(e) => setFilterSeccion(e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
@@ -408,6 +416,8 @@ export default function AdminAprobaciones() {
                             <option value="comunidad">Comunidad</option>
                         </select>
                         <select
+                            id="filter-tipo"
+                            name="tipo"
                             value={filterTipo}
                             onChange={(e) => setFilterTipo(e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
@@ -631,6 +641,38 @@ export default function AdminAprobaciones() {
                                     {approvingId === selectedTicket.id ? '⏳ Aprobando...' : '✓ Confirmar Aprobación'}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmación Masiva */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4 text-green-600">
+                            <span className="text-2xl">⚡</span>
+                            <h3 className="text-xl font-bold text-gray-900">Confirmar Aprobación</h3>
+                        </div>
+                        <p className="text-gray-600 mb-6 text-lg">
+                            ¿Estás seguro de aprobar <span className="font-bold text-gray-900">{selectedItems.length}</span> ticket(s) seleccionado(s)?
+                        </p>
+                        <div className="bg-blue-50 p-4 rounded-lg mb-6 text-sm text-blue-800">
+                            Esta acción registrará los pagos oficialmente en el sistema y notificará a los apoderados.
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmApproveSelected}
+                                className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-lg shadow-green-200 transition-all active:scale-95"
+                            >
+                                Sí, Aprobar Todo
+                            </button>
                         </div>
                     </div>
                 </div>
