@@ -6,28 +6,36 @@ const MONTH_NAMES = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-const TicketPagoForm = ({ alumno, items, pagos = [], onSuccess, onCancel }) => {
+const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
 
     // Calcular deudas pendientes al inicio
     const deudasPendientes = useMemo(() => {
         return items.filter(item => {
-            // Verificar si ya está pagado
-            // NOTA: Mantenemos la lógica actual, pero idealmente debería ser por ID estricto en el futuro
+            // 1. Verificar si ya está pagado
             const isPaid = pagos.some(p =>
                 p.estado === 'PAGADO' &&
                 p.anio === item.anio &&
                 (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
                 (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
             );
-            return !isPaid;
+
+            if (isPaid) return false;
+
+            // 2. Verificar si ya tiene un ticket pendiente informado
+            const hasPendingTicket = tickets.some(t =>
+                t.estado === 'pendiente' &&
+                (t.item_id === item.id) // Coincidencia exacta por ID
+            );
+
+            return !hasPendingTicket;
         }).sort((a, b) => {
             // Ordenar: primero por mes (si existe), luego por descripción
             if (a.mes && b.mes) return a.mes - b.mes;
             return 0;
         });
-    }, [items, pagos]);
+    }, [items, pagos, tickets]);
 
     const [formData, setFormData] = useState({
         fecha_pago: new Date().toISOString().split('T')[0],
