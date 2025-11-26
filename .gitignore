@@ -32,3 +32,22 @@ node_modules
 
 # Logs y builds
 dist
+
+# Scripts temporales y de mantenimiento (SQL/JS)
+add_created_by_to_items.sql
+add_foto_url_column.sql
+create_resources_table.sql
+apply_migration.js
+check_db.js
+check_manada.js
+debug_cuotas.js
+get_cuota.js
+reset_database.js
+
+# Datos y reportes locales
+cuota_mensual.json
+reporte_*.txt
+test_data.xlsx
+inspect_*.js
+inspect_*.js
+inspect_*.js
