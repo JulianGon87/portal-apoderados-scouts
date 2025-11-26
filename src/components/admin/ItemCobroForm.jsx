@@ -77,6 +77,25 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
         try {
             setLoading(true);
 
+            // Obtener el usuario actual
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('No hay usuario autenticado');
+
+            // Obtener el ID del usuario en la tabla users
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('auth_user_id', user.id)
+                .single();
+
+            if (userError) {
+                console.error('Error obteniendo usuario:', userError);
+                throw userError;
+            }
+
+            console.log('Usuario autenticado:', user.id);
+            console.log('ID en tabla users:', userData?.id);
+
             if (item) {
                 // Edición: solo un registro, tomamos el primer mes si es cuota mensual
                 const dataToUpdate = {
@@ -92,12 +111,17 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
                     const itemsToInsert = formData.meses.map((m) => ({
                         ...baseData,
                         mes: parseInt(m),
+                        created_by: userData.id
                     }));
                     const { error: insErr } = await supabase.from('items_pago').insert(itemsToInsert);
                     if (insErr) throw insErr;
                 } else {
                     // Otros tipos: un solo registro
-                    const dataToInsert = { ...baseData, mes: null };
+                    const dataToInsert = {
+                        ...baseData,
+                        mes: null,
+                        created_by: userData.id
+                    };
                     const { error: insErr } = await supabase.from('items_pago').insert([dataToInsert]);
                     if (insErr) throw insErr;
                 }
