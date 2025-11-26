@@ -13,6 +13,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ItemsCobro from './pages/admin/ItemsCobro';
 import AdminTickets from './pages/admin/AdminTickets';
 import AdminAprobaciones from './pages/admin/AdminAprobaciones';
+import AdminResources from './pages/admin/AdminResources';
 
 function App() {
   return (
@@ -36,6 +37,11 @@ function App() {
           <Route path="items-cobro" element={
             <ProtectedRoute requiredPermissions={['crear_items_cobro', 'editar_items_cobro']}>
               <ItemsCobro />
+            </ProtectedRoute>
+          } />
+          <Route path="recursos" element={
+            <ProtectedRoute requiredPermissions="crear_items_cobro">
+              <AdminResources />
             </ProtectedRoute>
           } />
           <Route path="tickets" element={

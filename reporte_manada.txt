@@ -1,0 +1,24 @@
+================================================================================
+REVISIÓN DE ITEMS DE COBRO PARA SECCIÓN MANADA
+================================================================================
+
+Total de items en la base de datos: 6
+Items aplicables a MANADA: 0
+  - Items específicos de MANADA: 0
+  - Items generales (todas las secciones): 0
+
+================================================================================
+DETALLE DE ITEMS APLICABLES A MANADA
+================================================================================
+
+================================================================================
+ANÁLISIS DE DUPLICIDAD (Cuotas Mensuales)
+================================================================================
+
+✅ No se encontraron cuotas mensuales duplicadas para Manada.
+
+================================================================================
+ANÁLISIS DE OTROS ITEMS (No cuotas mensuales)
+================================================================================
+
+No hay otros items (rifas, eventos, etc.) asignados a Manada.

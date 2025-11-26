@@ -1,0 +1,13 @@
+[
+  {
+    "id": 7,
+    "tipo_item": "cuota_mensual",
+    "descripcion": "CuoTA TEST",
+    "monto": 1000,
+    "anio": 2025,
+    "mes": 1,
+    "seccion": "manada",
+    "created_at": "2025-11-22T04:16:40.579964+00:00",
+    "updated_at": "2025-11-22T04:16:40.579964+00:00"
+  }
+]

@@ -25,6 +25,12 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
             permission: 'crear_items_cobro'
         },
         {
+            path: '/admin/recursos',
+            label: 'Biblioteca Recursos',
+            icon: '📚',
+            permission: 'crear_items_cobro' // Usamos el mismo permiso por ahora
+        },
+        {
             path: '/admin/tickets',
             label: 'Tickets de Pago',
             icon: '🎫',

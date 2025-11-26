@@ -1,0 +1,96 @@
+================================================================================
+REVISIÓN COMPLETA DE ITEMS DE COBRO EN LA BASE DE DATOS
+================================================================================
+
+Total de items en la base de datos: 6
+
+DISTRIBUCIÓN POR SECCIÓN:
+--------------------------------------------------------------------------------
+
+compañia: 1 items
+
+manada: 4 items
+
+tropa: 1 items
+
+================================================================================
+DETALLE COMPLETO DE TODOS LOS ITEMS
+================================================================================
+
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+SECCIÓN: compañia
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+
+[ID: 4]
+  Tipo: rifa
+  Descripción: Rifa Manzana
+  Monto: $3.000
+  Año: 2025 | Mes: N/A
+  Vencimiento: No definido
+
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+SECCIÓN: manada
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+
+[ID: 2]
+  Tipo: rifa
+  Descripción: Rifa Verano
+  Monto: $10.000
+  Año: 2025 | Mes: N/A
+  Vencimiento: No definido
+
+[ID: 1]
+  Tipo: evento
+  Descripción: Gunbal Enero 2026
+  Monto: $3.000
+  Año: 2025 | Mes: N/A
+  Vencimiento: No definido
+
+[ID: 6]
+  Tipo: parche
+  Descripción: Parche dia de la Naturaleza
+  Monto: $2.500
+  Año: 2025 | Mes: N/A
+  Vencimiento: No definido
+
+[ID: 3]
+  Tipo: parche
+  Descripción: Parche iniciacion
+  Monto: $1.000
+  Año: 2026 | Mes: N/A
+  Vencimiento: No definido
+
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+SECCIÓN: tropa
+▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+
+[ID: 5]
+  Tipo: evento
+  Descripción: Puerta a puerta
+  Monto: $500
+  Año: 2025 | Mes: N/A
+  Vencimiento: No definido
+
+================================================================================
+VERIFICACIÓN DE ALUMNOS EN MANADA
+================================================================================
+
+Alumnos en MANADA: 18
+  - ISIDORA SOFIA GONZALEZ RAMOS
+  - JUAN LUIS PEREZ DIAZ
+  - BENJAMIN ALEXANDER VELASQUEZ FREDES
+  - MAITE CAMPOS LEIVA
+  - URIEL ANTONIA LETELIER TAPIA
+  - FLORENCIA ANTONIA ZAPATA ZAMORA
+  - LUCIA AMPARO BECAR MARTINEZ
+  - SOFIA DOMINIQUE AVELLO GARCES
+  - MARIA JESUS GUZMAN CAMPOS
+  - SOPHIA SANCHEZ TALAMILLA
+  - ALFONSO ANDRES CONTRERAS ALVAREZ
+  - AGUSTIN ALONSO DIAZ LEIVA
+  - GINNO LUCCIANO PIERBATTISTI MORALES
+  - AYDAN VALENTINO FUENTES MORALES
+  - AMANDA PAMELA PONCE LEIVA
+  - JAVIER ALFONSO BARREDO CARRILLO
+  - AMELIA CHAVEZ GUTIERREZ
+  - ALUMNO TEST DOS GONZALEZ

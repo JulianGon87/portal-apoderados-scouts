@@ -20,6 +20,19 @@ const formatRut = (rut) => {
     return `${formattedBody}-${dv}`;
 };
 
+const getUnitStyles = (unidad) => {
+    const normalized = unidad?.toLowerCase() || 'general';
+    const styles = {
+        manada: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', badge: 'bg-yellow-100', icon: '🐺' },
+        tropa: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', badge: 'bg-green-100', icon: '⚜️' },
+        compañia: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', badge: 'bg-blue-100', icon: '🕊️' },
+        avanzada: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', badge: 'bg-red-100', icon: '🔥' },
+        clan: { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-800', badge: 'bg-gray-100', icon: '🏔️' },
+        general: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800', badge: 'bg-purple-100', icon: '⛺' }
+    };
+    return styles[normalized] || styles.general;
+};
+
 export default function StudentProfilePage() {
     const { slug } = useParams();
     const navigate = useNavigate();
@@ -30,6 +43,10 @@ export default function StudentProfilePage() {
     const [items, setItems] = useState([]);
     const [logros, setLogros] = useState([]);
     const [tickets, setTickets] = useState([]);
+    const [recursos, setRecursos] = useState([]); // Nuevo estado para recursos
+    const [resourceTypeFilter, setResourceTypeFilter] = useState('todos'); // Filtro por tipo de recurso
+    const [searchQuery, setSearchQuery] = useState(''); // Búsqueda
+    const [selectedResource, setSelectedResource] = useState(null); // Recurso seleccionado para preview
     const [showTicketForm, setShowTicketForm] = useState(false);
 
     const fetchAlumnoData = React.useCallback(async () => {
@@ -52,36 +69,43 @@ export default function StudentProfilePage() {
             if (error) throw error;
             setAlumno(data);
 
+            // Carga de items
             const currentYear = new Date().getFullYear();
-            const { data: itemsData, error: itemsError } = await supabase
-                .from('items_pago')
-                .select('*')
-                .eq('anio', currentYear);
-
-            if (itemsError) console.error('Error al cargar items:', itemsError);
-
-            const applicableItems = (itemsData || []).filter(item =>
-                !item.seccion || item.seccion === data.seccion
-            );
+            const { data: itemsData } = await supabase.from('items_pago').select('*').eq('anio', currentYear);
+            const applicableItems = (itemsData || []).filter(item => !item.seccion || item.seccion === data.seccion);
             setItems(applicableItems);
 
-            const { data: logrosData, error: logrosError } = await supabase
-                .from('logros_alumno')
-                .select('*')
-                .eq('alumno_id', data.id)
-                .order('fecha_obtencion', { ascending: false });
-
-            if (logrosError) console.error('Error al cargar logros:', logrosError);
+            // Carga de logros
+            const { data: logrosData } = await supabase.from('logros_alumno').select('*').eq('alumno_id', data.id).order('fecha_obtencion', { ascending: false });
             setLogros(logrosData || []);
 
-            const { data: ticketsData, error: ticketsError } = await supabase
-                .from('tickets_pago')
-                .select('*, items_pago(descripcion, mes)')
-                .eq('alumno_id', data.id)
+            // Carga de tickets
+            const { data: ticketsData } = await supabase.from('tickets_pago').select('*, items_pago(descripcion, mes)').eq('alumno_id', data.id).order('created_at', { ascending: false });
+            setTickets(ticketsData || []);
+
+            // Cargar Recursos Educativos
+            // Normalizamos la sección del alumno: "COMPAÑÍA" -> "compañia" (sin tilde, con ñ)
+            const normalizeString = (str) => {
+                if (!str) return 'general';
+                return str.toLowerCase()
+                    .replace(/á/g, 'a')
+                    .replace(/é/g, 'e')
+                    .replace(/í/g, 'i')
+                    .replace(/ó/g, 'o')
+                    .replace(/ú/g, 'u');
+                // Mantenemos la ñ intacta
+            };
+
+            const seccionNormalizada = normalizeString(data.seccion);
+
+            const { data: recursosData, error: recursosError } = await supabase
+                .from('recursos_educativos')
+                .select('*')
+                .or(`unidad.eq.general,unidad.eq.${seccionNormalizada}`)
                 .order('created_at', { ascending: false });
 
-            if (ticketsError) console.error('Error al cargar tickets:', ticketsError);
-            setTickets(ticketsData || []);
+            if (recursosError) console.error('Error loading resources:', recursosError);
+            setRecursos(recursosData || []);
 
         } catch (error) {
             console.error('Error al cargar alumno:', error);
@@ -89,7 +113,7 @@ export default function StudentProfilePage() {
         } finally {
             setLoading(false);
         }
-    }, [slug, navigate]); // Eliminamos 'alumno' de las dependencias para evitar loops, ya que lo usamos solo para el check inicial
+    }, [slug, navigate]); // Eliminamos 'alumno' de las dependencias
 
     useEffect(() => {
         if (slug) fetchAlumnoData();
@@ -97,7 +121,7 @@ export default function StudentProfilePage() {
 
     const handleTicketSuccess = () => {
         setShowTicketForm(false);
-        fetchAlumnoData(); // Recarga suave de datos
+        fetchAlumnoData();
     };
 
     const { paymentGroups, totalDebt, pendingCount } = useStudentFinance(items, alumno?.pagos);
@@ -222,9 +246,9 @@ export default function StudentProfilePage() {
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden min-h-[500px]">
 
                     {/* Tabs Principales */}
-                    <div className="flex border-b border-gray-200">
+                    <div className="flex border-b border-gray-200 overflow-x-auto">
                         <button
-                            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${activeTab === 'logros'
+                            className={`flex-1 py-4 px-4 text-center font-medium text-lg transition-colors whitespace-nowrap ${activeTab === 'logros'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
@@ -233,17 +257,162 @@ export default function StudentProfilePage() {
                             🏆 Logros
                         </button>
                         <button
-                            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${activeTab === 'pagos'
+                            className={`flex-1 py-4 px-4 text-center font-medium text-lg transition-colors whitespace-nowrap ${activeTab === 'biblioteca'
+                                ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                }`}
+                            onClick={() => setActiveTab('biblioteca')}
+                        >
+                            📚 Mochila Digital
+                        </button>
+                        <button
+                            className={`flex-1 py-4 px-4 text-center font-medium text-lg transition-colors whitespace-nowrap ${activeTab === 'pagos'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                             onClick={() => setActiveTab('pagos')}
                         >
-                            💰 Historial de Pagos
+                            💰 Pagos
                         </button>
                     </div>
 
                     <div className="p-6 md:p-8">
+                        {activeTab === 'biblioteca' && (
+                            <div className="animate-fade-in">
+                                {/* Filtros y Búsqueda */}
+                                <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-center">
+                                    {/* Chips de Filtro */}
+                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar w-full md:w-auto">
+                                        {[
+                                            { id: 'todos', label: 'Todo', icon: '🎒' },
+                                            { id: 'ficha', label: 'Fichas', icon: '📄' },
+                                            { id: 'cancion', label: 'Canciones', icon: '🎵' },
+                                            { id: 'video', label: 'Videos', icon: '🎥' },
+                                            { id: 'otro', label: 'Otros', icon: '📦' }
+                                        ].map(type => (
+                                            <button
+                                                key={type.id}
+                                                onClick={() => setResourceTypeFilter(type.id)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all whitespace-nowrap shadow-sm flex-shrink-0 ${resourceTypeFilter === type.id
+                                                    ? 'bg-scout-blue text-white scale-105 shadow-md ring-2 ring-blue-200'
+                                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                                    }`}
+                                            >
+                                                <span className="text-lg">{type.icon}</span>
+                                                {type.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Barra de Búsqueda */}
+                                    <div className="relative w-full md:w-64">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar recurso..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:border-scout-blue focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
+                                        />
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                                    </div>
+                                </div>
+
+                                {recursos.filter(r =>
+                                    (resourceTypeFilter === 'todos' || r.tipo === resourceTypeFilter) &&
+                                    (r.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || r.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                ).length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200 mx-4">
+                                        <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-5xl mx-auto mb-4 animate-bounce-slow">
+                                            {searchQuery ? '🤔' : resourceTypeFilter === 'todos' ? '🎒' : '🔍'}
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2 font-display">
+                                            {searchQuery ? 'No encontramos eso' : resourceTypeFilter === 'todos' ? 'Mochila vacía' : 'No encontramos nada aquí'}
+                                        </h3>
+                                        <p className="text-gray-500 max-w-md mx-auto px-4">
+                                            {searchQuery
+                                                ? `Intenta buscar con otras palabras o borra la búsqueda.`
+                                                : resourceTypeFilter === 'todos'
+                                                    ? 'Aún no hay material educativo subido para tu unidad. ¡Dile a tus jefes que suban cosas divertidas!'
+                                                    : 'Prueba buscando en otra categoría.'}
+                                        </p>
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="mt-4 text-scout-blue font-bold hover:underline"
+                                            >
+                                                Borrar búsqueda
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {recursos
+                                            .filter(r =>
+                                                (resourceTypeFilter === 'todos' || r.tipo === resourceTypeFilter) &&
+                                                (r.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || r.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            )
+                                            .map((recurso) => {
+                                                const unitStyle = getUnitStyles(recurso.unidad);
+                                                const isNew = (new Date() - new Date(recurso.created_at)) / (1000 * 60 * 60 * 24) < 7; // Menos de 7 días
+                                                const canPreview = ['video', 'cancion'].includes(recurso.tipo);
+
+                                                return (
+                                                    <div key={recurso.id} className={`relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full border-2 ${unitStyle.border} overflow-hidden`}>
+                                                        {/* Badge de "Nuevo" */}
+                                                        {isNew && (
+                                                            <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm animate-pulse">
+                                                                ¡NUEVO!
+                                                            </div>
+                                                        )}
+
+                                                        <div className={`p-6 flex flex-col h-full ${unitStyle.bg} bg-opacity-30`}>
+                                                            <div className="flex justify-between items-start mb-4">
+                                                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-sm bg-white ${unitStyle.text} group-hover:scale-110 transition-transform duration-300`}>
+                                                                    {recurso.tipo === 'ficha' ? '📄' :
+                                                                        recurso.tipo === 'cancion' ? '🎵' :
+                                                                            recurso.tipo === 'video' ? '🎥' : '📦'}
+                                                                </div>
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide ${unitStyle.badge} ${unitStyle.text}`}>
+                                                                    {recurso.unidad}
+                                                                </span>
+                                                            </div>
+
+                                                            <h3 className="font-bold text-gray-900 mb-2 text-xl leading-tight font-display">
+                                                                {recurso.titulo}
+                                                            </h3>
+
+                                                            <p className="text-sm text-gray-600 line-clamp-3 mb-6 flex-grow font-medium">
+                                                                {recurso.descripcion || 'Sin descripción disponible.'}
+                                                            </p>
+
+                                                            {canPreview ? (
+                                                                <button
+                                                                    onClick={() => setSelectedResource(recurso)}
+                                                                    className="mt-auto w-full py-3 bg-white hover:bg-scout-blue hover:text-white text-scout-blue font-black rounded-xl transition-all duration-300 shadow-sm border-2 border-scout-blue/10 hover:border-scout-blue flex items-center justify-center gap-2 group-hover:translate-y-[-2px]"
+                                                                >
+                                                                    <span>Reproducir</span>
+                                                                    <span className="text-lg">▶️</span>
+                                                                </button>
+                                                            ) : (
+                                                                <a
+                                                                    href={recurso.url_archivo}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="mt-auto w-full py-3 bg-white hover:bg-scout-blue hover:text-white text-scout-blue font-black rounded-xl transition-all duration-300 shadow-sm border-2 border-scout-blue/10 hover:border-scout-blue flex items-center justify-center gap-2 group-hover:translate-y-[-2px]"
+                                                                >
+                                                                    <span>Abrir Ahora</span>
+                                                                    <span className="text-lg">🚀</span>
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'pagos' && (
                             <div className="animate-fade-in">
                                 {/* Sub-tabs para Pagos */}
@@ -497,31 +666,115 @@ export default function StudentProfilePage() {
             </div>
 
             {/* Modal de Ticket de Pago */}
-            {showTicketForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900">Informar Pago</h2>
+            {
+                showTicketForm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900">Informar Pago</h2>
+                                    <button
+                                        onClick={() => setShowTicketForm(false)}
+                                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <TicketPagoForm
+                                    alumno={alumno}
+                                    items={items}
+                                    pagos={alumno.pagos || []}
+                                    tickets={tickets}
+                                    onSuccess={handleTicketSuccess}
+                                    onCancel={() => setShowTicketForm(false)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Modal de Preview de Recurso */}
+            {
+                selectedResource && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-md animate-fade-in">
+                        <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">
+                                        {selectedResource.tipo === 'video' ? '🎥' : '🎵'}
+                                    </span>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 leading-tight">{selectedResource.titulo}</h3>
+                                        <p className="text-xs text-gray-500">Vista previa</p>
+                                    </div>
+                                </div>
                                 <button
-                                    onClick={() => setShowTicketForm(false)}
-                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    onClick={() => setSelectedResource(null)}
+                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all font-bold text-lg shadow-sm"
                                 >
                                     ✕
                                 </button>
                             </div>
-                            <TicketPagoForm
-                                alumno={alumno}
-                                items={items}
-                                pagos={alumno.pagos || []}
-                                tickets={tickets}
-                                onSuccess={handleTicketSuccess}
-                                onCancel={() => setShowTicketForm(false)}
-                            />
+
+                            <div className="flex-grow bg-black flex items-center justify-center p-0 overflow-hidden relative group">
+                                {selectedResource.tipo === 'video' ? (
+                                    <video
+                                        src={selectedResource.url_archivo}
+                                        controls
+                                        autoPlay
+                                        className="max-h-[70vh] w-full object-contain"
+                                    >
+                                        Tu navegador no soporta la reproducción de video.
+                                    </video>
+                                ) : selectedResource.tipo === 'cancion' ? (
+                                    <div className="w-full p-12 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 text-white h-[50vh]">
+                                        <div className="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center text-6xl mb-8 animate-pulse-slow">
+                                            🎵
+                                        </div>
+                                        <h4 className="text-xl font-bold mb-6 text-center">{selectedResource.titulo}</h4>
+                                        <audio
+                                            src={selectedResource.url_archivo}
+                                            controls
+                                            autoPlay
+                                            className="w-full max-w-md"
+                                        >
+                                            Tu navegador no soporta la reproducción de audio.
+                                        </audio>
+                                    </div>
+                                ) : (
+                                    <div className="p-12 text-center">
+                                        <p>Vista previa no disponible para este formato.</p>
+                                        <a
+                                            href={selectedResource.url_archivo}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-4 inline-block btn-scout"
+                                        >
+                                            Abrir en nueva pestaña
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-white border-t border-gray-100">
+                                <p className="text-gray-600 text-sm">{selectedResource.descripcion}</p>
+                                <div className="mt-4 flex justify-end">
+                                    <a
+                                        href={selectedResource.url_archivo}
+                                        download
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-scout-blue font-bold hover:underline"
+                                    >
+                                        <span>📥</span> Descargar archivo original
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div>
     );
 }
