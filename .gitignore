@@ -32,3 +32,25 @@ node_modules
 
 # Logs y builds
 dist
+
+# Archivos temporales y de diagnóstico
+*.sql
+*.txt
+*.xlsx
+*.json
+!package.json
+!tsconfig.json
+!jsconfig.json
+!vercel.json
+
+# Scripts de mantenimiento en raiz
+inspect_*.js
+diagnose_*.js
+check_*.js
+fix_*.js
+wipe_*.js
+debug_*.js
+reset_*.js
+get_*.js
+apply_migration.js
+test_data.xlsx

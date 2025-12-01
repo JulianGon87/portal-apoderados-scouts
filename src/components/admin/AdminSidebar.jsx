@@ -25,15 +25,9 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
             permission: 'crear_items_cobro'
         },
         {
-            path: '/admin/tickets',
-            label: 'Tickets de Pago',
-            icon: '🎫',
-            permission: 'gestionar_tickets'
-        },
-        {
-            path: '/admin/aprobaciones',
-            label: 'Aprobaciones',
-            icon: '✅',
+            path: '/admin/pagos',
+            label: 'Gestión de Pagos',
+            icon: '💳',
             permission: 'aprobar_pagos'
         },
         {
@@ -96,6 +90,16 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
                             <span className="font-medium">{item.label}</span>
                         </NavLink>
                     ))}
+
+                    <div className="pt-4 mt-4 border-t border-gray-200">
+                        <NavLink
+                            to="/"
+                            className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                            <span className="text-xl mr-3">🏠</span>
+                            <span className="font-medium">Volver al Inicio</span>
+                        </NavLink>
+                    </div>
                 </nav>
 
                 {/* Footer del Sidebar */}

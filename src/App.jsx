@@ -11,8 +11,11 @@ import AdminLayout from './components/admin/AdminLayout';
 import ProtectedRoute from './components/admin/ProtectedRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ItemsCobro from './pages/admin/ItemsCobro';
-import AdminTickets from './pages/admin/AdminTickets';
-import AdminAprobaciones from './pages/admin/AdminAprobaciones';
+import AdminPagos from './pages/admin/AdminPagos';
+
+import AdminAlumnos from './pages/admin/AdminAlumnos';
+import AdminLogros from './pages/admin/AdminLogros';
+import AdminUsuarios from './pages/admin/AdminUsuarios';
 
 function App() {
   return (
@@ -38,14 +41,24 @@ function App() {
               <ItemsCobro />
             </ProtectedRoute>
           } />
-          <Route path="tickets" element={
-            <ProtectedRoute requiredPermissions="gestionar_tickets">
-              <AdminTickets />
+          <Route path="pagos" element={
+            <ProtectedRoute requiredPermissions={['aprobar_pagos', 'ver_metricas']}>
+              <AdminPagos />
             </ProtectedRoute>
           } />
-          <Route path="aprobaciones" element={
-            <ProtectedRoute requiredPermissions={['aprobar_pagos', 'ver_metricas']}>
-              <AdminAprobaciones />
+          <Route path="alumnos" element={
+            <ProtectedRoute requiredPermissions="crear_alumnos">
+              <AdminAlumnos />
+            </ProtectedRoute>
+          } />
+          <Route path="logros" element={
+            <ProtectedRoute requiredPermissions="designar_logros">
+              <AdminLogros />
+            </ProtectedRoute>
+          } />
+          <Route path="usuarios" element={
+            <ProtectedRoute requiredPermissions="gestionar_usuarios">
+              <AdminUsuarios />
             </ProtectedRoute>
           } />
         </Route>

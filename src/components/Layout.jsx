@@ -3,6 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 import { LogOut, User } from 'lucide-react';
 
+import Footer from './Footer';
+
 export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -93,6 +95,9 @@ export default function Layout() {
             <main className="flex-grow w-full flex flex-col">
                 <Outlet />
             </main>
+
+            {/* Footer Global */}
+            <Footer />
         </div>
     );
 }

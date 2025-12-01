@@ -19,8 +19,8 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
         <div className="card-glass p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h4 className="text-xl font-semibold text-gray-800 line-clamp-1" title={alumno.nombre}>
-                        {alumno.nombre}
+                    <h4 className="text-xl font-semibold text-gray-800 line-clamp-1 uppercase" title={`${alumno.nombre} ${alumno.apellidos_alumno}`}>
+                        {alumno.nombre} {alumno.apellidos_alumno}
                     </h4>
                     <p className="text-scout-blue font-medium mt-1 flex items-center gap-2">
                         <span className="text-xl">🏕️</span>

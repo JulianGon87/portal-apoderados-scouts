@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validateRut } from '../utils/rut.js';
 import { supabase } from '../supabase/client.js';
-import Footer from '../components/Footer';
 import PasswordInput from '../components/PasswordInput';
 
 const LoginForm = () => {
@@ -188,8 +187,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      <Footer className="mt-auto pb-2" />
     </div>
   );
 }

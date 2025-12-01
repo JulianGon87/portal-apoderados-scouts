@@ -76,7 +76,7 @@ export default function StudentProfilePage() {
 
             const { data: ticketsData, error: ticketsError } = await supabase
                 .from('tickets_pago')
-                .select('*, items_pago(descripcion, mes)')
+                .select('*, items_pago(descripcion, mes, anio)')
                 .eq('alumno_id', data.id)
                 .order('created_at', { ascending: false });
 
@@ -89,7 +89,7 @@ export default function StudentProfilePage() {
         } finally {
             setLoading(false);
         }
-    }, [slug, navigate]); // Eliminamos 'alumno' de las dependencias para evitar loops, ya que lo usamos solo para el check inicial
+    }, [slug, navigate]);
 
     useEffect(() => {
         if (slug) fetchAlumnoData();
@@ -382,77 +382,100 @@ export default function StudentProfilePage() {
                                                     acc[key].ids.push(ticket.id);
                                                     // Si alguno del grupo está rechazado, el grupo se marca con alerta, pero mantenemos el estado del ticket principal para el color
                                                     return acc;
-                                                }, {})).map((group) => (
-                                                    <div key={group.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <div>
-                                                                <div className="flex flex-wrap gap-2 mb-2">
-                                                                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${group.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
-                                                                        group.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
-                                                                            'bg-yellow-100 text-yellow-800'
-                                                                        }`}>
-                                                                        {group.estado}
-                                                                    </span>
-                                                                    {group.items.length > 1 && (
-                                                                        <span className="inline-block px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                                                            {group.items.length} ítems
+                                                }, {})).map((group) => {
+                                                    // Ordenar ítems: primero por año/mes (si existe), luego otros
+                                                    group.items.sort((a, b) => {
+                                                        const getSortValue = (item) => {
+                                                            if (item.items_pago?.mes) {
+                                                                // Año * 100 + Mes (ej: 202501, 202512)
+                                                                // Si no hay año en items_pago, usamos el año actual como fallback o 0
+                                                                const year = item.items_pago.anio || new Date().getFullYear();
+                                                                return year * 100 + item.items_pago.mes;
+                                                            }
+                                                            // Ítems sin mes (rifas, eventos) van al final (o al principio si prefieres)
+                                                            // Usamos un valor alto para que vayan al final
+                                                            return 999999;
+                                                        };
+
+                                                        const valA = getSortValue(a);
+                                                        const valB = getSortValue(b);
+
+                                                        if (valA !== valB) return valA - valB;
+                                                        return a.id - b.id; // Desempate estable
+                                                    });
+
+                                                    return (
+                                                        <div key={group.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <div>
+                                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${group.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
+                                                                            group.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
+                                                                                'bg-yellow-100 text-yellow-800'
+                                                                            }`}>
+                                                                            {group.estado}
                                                                         </span>
-                                                                    )}
-                                                                </div>
-                                                                <h4 className="font-bold text-gray-800 text-lg">
-                                                                    {group.items.length > 1 ? 'Pago Agrupado' : group.tipo_item.replace('_', ' ')}
-                                                                </h4>
-                                                            </div>
-                                                            <p className="text-xl font-bold text-gray-800">
-                                                                ${group.totalMonto.toLocaleString('es-CL')}
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Lista de ítems del grupo */}
-                                                        <div className="mb-3 bg-gray-50 rounded-lg p-3 text-sm">
-                                                            <ul className="space-y-1">
-                                                                {group.items.map((item, idx) => {
-                                                                    // Determinar qué mostrar entre paréntesis
-                                                                    let detalle = '';
-                                                                    if (item.items_pago) {
-                                                                        detalle = item.items_pago.descripcion;
-                                                                        // Si es cuota mensual y la descripción es genérica, intentamos usar el mes si tenemos un mapa de meses o si viene en el objeto
-                                                                        if (item.tipo_item === 'cuota_mensual' && item.items_pago.mes) {
-                                                                            const monthName = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][item.items_pago.mes - 1];
-                                                                            if (monthName) detalle = monthName;
-                                                                        }
-                                                                    }
-
-                                                                    return (
-                                                                        <li key={idx} className="flex justify-between text-gray-600">
-                                                                            <span className="capitalize">
-                                                                                • {item.tipo_item.replace('_', ' ')}
-                                                                                {detalle && <span className="text-gray-400 ml-1">({detalle})</span>}
+                                                                        {group.items.length > 1 && (
+                                                                            <span className="inline-block px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                                                {group.items.length} ítems
                                                                             </span>
-                                                                            <span>${item.monto.toLocaleString('es-CL')}</span>
-                                                                        </li>
-                                                                    );
-                                                                })}
-                                                            </ul>
-                                                        </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <h4 className="font-bold text-gray-800 text-lg">
+                                                                        {group.items.length > 1 ? 'Pago Agrupado' : group.tipo_item.replace('_', ' ')}
+                                                                    </h4>
+                                                                </div>
+                                                                <p className="text-xl font-bold text-gray-800">
+                                                                    ${group.totalMonto.toLocaleString('es-CL')}
+                                                                </p>
+                                                            </div>
 
-                                                        <div className="text-sm text-gray-600 flex justify-between items-center pt-2 border-t border-gray-100">
-                                                            <span>📅 {new Date(group.fecha_pago).toLocaleDateString('es-CL')}</span>
-                                                            {group.comprobante_url && (
-                                                                <a href={group.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium">
-                                                                    📎 Ver Comprobante
-                                                                </a>
+                                                            {/* Lista de ítems del grupo */}
+                                                            <div className="mb-3 bg-gray-50 rounded-lg p-3 text-sm">
+                                                                <ul className="space-y-1">
+                                                                    {group.items.map((item, idx) => {
+                                                                        // Determinar qué mostrar entre paréntesis
+                                                                        let detalle = '';
+                                                                        if (item.items_pago) {
+                                                                            detalle = item.items_pago.descripcion;
+                                                                            // Si es cuota mensual y la descripción es genérica, intentamos usar el mes si tenemos un mapa de meses o si viene en el objeto
+                                                                            if (item.tipo_item === 'cuota_mensual' && item.items_pago.mes) {
+                                                                                const monthName = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][item.items_pago.mes - 1];
+                                                                                if (monthName) detalle = monthName;
+                                                                            }
+                                                                        }
+
+                                                                        return (
+                                                                            <li key={idx} className="flex justify-between text-gray-600">
+                                                                                <span className="capitalize">
+                                                                                    • {item.tipo_item.replace('_', ' ')}
+                                                                                    {detalle && <span className="text-gray-400 ml-1">({detalle})</span>}
+                                                                                </span>
+                                                                                <span>${item.monto.toLocaleString('es-CL')}</span>
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+
+                                                            <div className="text-sm text-gray-600 flex justify-between items-center pt-2 border-t border-gray-100">
+                                                                <span>📅 {new Date(group.fecha_pago).toLocaleDateString('es-CL')}</span>
+                                                                {group.comprobante_url && (
+                                                                    <a href={group.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                                                                        📎 Ver Comprobante
+                                                                    </a>
+                                                                )}
+                                                            </div>
+
+                                                            {group.comentario_admin && (
+                                                                <div className="mt-3 p-3 bg-red-50 rounded-lg text-sm text-red-700 border-l-4 border-red-300">
+                                                                    <span className="font-bold block text-xs uppercase mb-1">Observación Admin:</span>
+                                                                    {group.comentario_admin}
+                                                                </div>
                                                             )}
                                                         </div>
-
-                                                        {group.comentario_admin && (
-                                                            <div className="mt-3 p-3 bg-red-50 rounded-lg text-sm text-red-700 border-l-4 border-red-300">
-                                                                <span className="font-bold block text-xs uppercase mb-1">Observación Admin:</span>
-                                                                {group.comentario_admin}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         )}
                                     </div>
