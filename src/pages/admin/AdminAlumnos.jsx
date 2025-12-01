@@ -42,7 +42,7 @@ export default function AdminAlumnos() {
                 .from('alumnos')
                 .select(`
                     *,
-                    apoderado:users!apoderado_id(nombre, apellidos, rut, email, telefono)
+                    apoderado:apoderado_id(nombre, apellidos, rut, email, telefono)
                 `)
                 .order('apellidos_alumno', { ascending: true });
 
