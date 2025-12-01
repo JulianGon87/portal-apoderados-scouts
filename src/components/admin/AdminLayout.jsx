@@ -39,7 +39,6 @@ const AdminLayout = () => {
                 <AdminSidebar
                     isOpen={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
-                    rol={rol}
                 />
 
                 {/* Main Content */}

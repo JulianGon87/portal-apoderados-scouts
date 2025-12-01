@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { supabase } from '../supabase/client';
 
 const MONTH_NAMES = [
@@ -151,9 +152,9 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <span className="block text-sm font-medium text-gray-700">
                         Selecciona las deudas a pagar
-                    </label>
+                    </span>
                     <button
                         type="button"
                         onClick={handleSelectAll}
@@ -211,10 +212,11 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="fecha_pago" className="block text-sm font-medium text-gray-700 mb-1">
                     Fecha de Transferencia
                 </label>
                 <input
+                    id="fecha_pago"
                     type="date"
                     value={formData.fecha_pago}
                     onChange={(e) => setFormData({ ...formData, fecha_pago: e.target.value })}
@@ -224,11 +226,12 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="comprobante" className="block text-sm font-medium text-gray-700 mb-1">
                     Comprobante (Imagen o PDF)
                 </label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
                     <input
+                        id="comprobante"
                         type="file"
                         onChange={(e) => setFile(e.target.files[0])}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -273,6 +276,24 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
             </div>
         </form>
     );
+};
+
+TicketPagoForm.propTypes = {
+    alumno: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }).isRequired,
+    items: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        anio: PropTypes.number,
+        mes: PropTypes.number,
+        tipo_item: PropTypes.string,
+        monto: PropTypes.number,
+        descripcion: PropTypes.string,
+    })).isRequired,
+    pagos: PropTypes.array,
+    tickets: PropTypes.array,
+    onSuccess: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
 };
 
 export default TicketPagoForm;

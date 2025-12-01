@@ -4,7 +4,7 @@ import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useToast } from '../../components/Toast';
 
 export default function AdminLogros() {
-    const { hasPermission } = useAdminAuth();
+    const { user } = useAdminAuth();
     const { addToast } = useToast();
 
     const [logros, setLogros] = useState([]);
@@ -147,45 +147,47 @@ export default function AdminLogros() {
 
             {/* Lista de Logros */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {loading ? (
+                {loading && (
                     <div className="col-span-full text-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-scout-blue mx-auto"></div>
                     </div>
-                ) : filteredLogros.length === 0 ? (
+                )}
+
+                {!loading && filteredLogros.length === 0 && (
                     <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                         <p className="text-4xl mb-2">🏅</p>
                         <p className="text-gray-500">No hay logros registrados</p>
                     </div>
-                ) : (
-                    filteredLogros.map((logro) => (
-                        <div key={logro.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all relative group">
-                            <button
-                                onClick={() => handleDelete(logro.id)}
-                                className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                title="Eliminar logro"
-                            >
-                                ✕
-                            </button>
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl flex-shrink-0">
-                                    {logro.icono}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-900">{logro.titulo}</h3>
-                                    <p className="text-sm text-gray-600 mb-2">{logro.descripcion}</p>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <span className="font-medium text-scout-blue bg-blue-50 px-2 py-0.5 rounded-full">
-                                            {logro.alumnos?.nombre} {logro.alumnos?.apellidos_alumno}
-                                        </span>
-                                        <span className="text-gray-400">
-                                            {new Date(logro.fecha_obtencion).toLocaleDateString('es-CL')}
-                                        </span>
-                                    </div>
+                )}
+
+                {!loading && filteredLogros.length > 0 && filteredLogros.map((logro) => (
+                    <div key={logro.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all relative group">
+                        <button
+                            onClick={() => handleDelete(logro.id)}
+                            className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                            title="Eliminar logro"
+                        >
+                            ✕
+                        </button>
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl flex-shrink-0">
+                                {logro.icono}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">{logro.titulo}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{logro.descripcion}</p>
+                                <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-medium text-scout-blue bg-blue-50 px-2 py-0.5 rounded-full">
+                                        {logro.alumnos?.nombre} {logro.alumnos?.apellidos_alumno}
+                                    </span>
+                                    <span className="text-gray-400">
+                                        {new Date(logro.fecha_obtencion).toLocaleDateString('es-CL')}
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                    ))
-                )}
+                    </div>
+                ))}
             </div>
 
             {/* Modal */}
@@ -196,8 +198,9 @@ export default function AdminLogros() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Alumno</label>
+                                <label htmlFor="alumno_id" className="block text-sm font-medium text-gray-700 mb-1">Alumno</label>
                                 <select
+                                    id="alumno_id"
                                     name="alumno_id"
                                     required
                                     value={formData.alumno_id}
@@ -214,8 +217,9 @@ export default function AdminLogros() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Título del Logro</label>
+                                <label htmlFor="titulo" className="block text-sm font-medium text-gray-700 mb-1">Título del Logro</label>
                                 <input
+                                    id="titulo"
                                     type="text"
                                     name="titulo"
                                     required
@@ -227,8 +231,9 @@ export default function AdminLogros() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                                 <textarea
+                                    id="descripcion"
                                     name="descripcion"
                                     rows="2"
                                     required
@@ -241,8 +246,9 @@ export default function AdminLogros() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                    <label htmlFor="fecha_obtencion" className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                                     <input
+                                        id="fecha_obtencion"
                                         type="date"
                                         name="fecha_obtencion"
                                         required
@@ -252,8 +258,9 @@ export default function AdminLogros() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Icono</label>
+                                    <label htmlFor="icono" className="block text-sm font-medium text-gray-700 mb-1">Icono</label>
                                     <select
+                                        id="icono"
                                         name="icono"
                                         value={formData.icono}
                                         onChange={handleInputChange}

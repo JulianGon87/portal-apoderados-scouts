@@ -4,8 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 
 import AlumnoCard from '../components/AlumnoCard';
-import PasswordInput from '../components/PasswordInput';
 
+
+
+
+const combineAlumnosWithItems = (alumnos, items) => {
+  return (alumnos || []).map(alumno => {
+    const applicableItems = (items || []).filter(item => {
+      return !item.seccion || item.seccion.toUpperCase() === (alumno.seccion || '').toUpperCase();
+    });
+
+    return {
+      ...alumno,
+      items: applicableItems
+    };
+  });
+};
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -88,16 +102,8 @@ export default function HomePage() {
         }
 
         // 4. Combinar alumnos con sus items aplicables
-        const alumnosWithItems = (alumnosData || []).map(alumno => {
-          const applicableItems = (itemsData || []).filter(item => {
-            return !item.seccion || item.seccion.toUpperCase() === (alumno.seccion || '').toUpperCase();
-          });
-
-          return {
-            ...alumno,
-            items: applicableItems
-          };
-        });
+        // 4. Combinar alumnos con sus items aplicables
+        const alumnosWithItems = combineAlumnosWithItems(alumnosData, itemsData);
 
         setAlumnos(alumnosWithItems);
 
@@ -287,12 +293,10 @@ export default function HomePage() {
 
           {/* Overlay para Móvil */}
           {showSidebar && (
-            <div
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+            <button
+              type="button"
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity w-full h-full cursor-default"
               onClick={() => setShowSidebar(false)}
-              onKeyDown={(e) => e.key === 'Escape' && setShowSidebar(false)}
-              role="button"
-              tabIndex={0}
               aria-label="Cerrar menú lateral"
             />
           )}
@@ -331,6 +335,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <label className="absolute bottom-2 right-2 bg-white text-scout-green p-3 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors group" title="Cambiar foto">
+                      <span className="sr-only">Cambiar foto de perfil</span>
                       <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -394,7 +399,7 @@ export default function HomePage() {
                 Mis Hijos
               </h2>
               <span className="bg-scout-green/10 text-scout-green px-3 py-1 rounded-full text-sm font-bold">
-                {alumnos.length} Estudiante{alumnos.length !== 1 ? 's' : ''}
+                {alumnos.length} Estudiante{alumnos.length === 1 ? '' : 's'}
               </span>
             </div>
 

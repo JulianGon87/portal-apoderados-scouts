@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { getTipoLabel, getTipoBadgeColor } from '../utils/itemsHelpers';
 
 /**
@@ -6,7 +7,7 @@ import { getTipoLabel, getTipoBadgeColor } from '../utils/itemsHelpers';
  */
 const ItemCobroCard = ({ item }) => {
     // Por ahora el estado es siempre pendiente hasta la Fase 5
-    const estado = 'pendiente';
+
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -46,6 +47,16 @@ const ItemCobroCard = ({ item }) => {
             )}
         </div>
     );
+};
+
+ItemCobroCard.propTypes = {
+    item: PropTypes.shape({
+        tipo_item: PropTypes.string.isRequired,
+        descripcion: PropTypes.string.isRequired,
+        monto: PropTypes.number.isRequired,
+        mes: PropTypes.number,
+        anio: PropTypes.number
+    }).isRequired
 };
 
 export default ItemCobroCard;

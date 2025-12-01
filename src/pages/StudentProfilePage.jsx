@@ -20,6 +20,12 @@ const formatRut = (rut) => {
     return `${formattedBody}-${dv}`;
 };
 
+const getStatusColor = (estado) => {
+    if (estado === 'aprobado') return 'bg-green-100 text-green-800';
+    if (estado === 'rechazado') return 'bg-red-100 text-red-800';
+    return 'bg-yellow-100 text-yellow-800';
+};
+
 export default function StudentProfilePage() {
     const { slug } = useParams();
     const navigate = useNavigate();
@@ -317,8 +323,8 @@ export default function StudentProfilePage() {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-4">
-                                                {paymentGroups.otros.map((pago, index) => (
-                                                    <div key={index} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex justify-between items-center">
+                                                {paymentGroups.otros.map((pago) => (
+                                                    <div key={pago.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex justify-between items-center">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
                                                                 {pago.tipo_item === 'campamento' ? '⛺' :
@@ -409,10 +415,7 @@ export default function StudentProfilePage() {
                                                             <div className="flex justify-between items-start mb-3">
                                                                 <div>
                                                                     <div className="flex flex-wrap gap-2 mb-2">
-                                                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${group.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
-                                                                            group.estado === 'rechazado' ? 'bg-red-100 text-red-800' :
-                                                                                'bg-yellow-100 text-yellow-800'
-                                                                            }`}>
+                                                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(group.estado)}`}>
                                                                             {group.estado}
                                                                         </span>
                                                                         {group.items.length > 1 && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 /**
@@ -11,7 +11,7 @@ import { useAdminAuth } from '../../hooks/useAdminAuth';
  * @param {ReactNode} props.fallback - Componente alternativo si no tiene permisos (opcional)
  */
 const ProtectedRoute = ({ requiredPermissions = [], children, fallback }) => {
-    const { hasPermission, hasAnyPermission, isLoading, rol } = useAdminAuth(requiredPermissions);
+    const { hasPermission, isLoading, rol } = useAdminAuth(requiredPermissions);
 
     // Mostrar loading mientras verifica permisos
     if (isLoading) {
@@ -74,6 +74,15 @@ const ProtectedRoute = ({ requiredPermissions = [], children, fallback }) => {
     }
 
     return children;
+};
+
+ProtectedRoute.propTypes = {
+    requiredPermissions: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.arrayOf(PropTypes.string)
+    ]),
+    children: PropTypes.node.isRequired,
+    fallback: PropTypes.node
 };
 
 export default ProtectedRoute;

@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import useAdminAuth from '../../hooks/useAdminAuth';
+import PropTypes from 'prop-types';
 
 /**
  * Sidebar de navegación del panel de administración
  * Muestra los links según los permisos del usuario
  */
-const AdminSidebar = ({ isOpen, onClose, rol }) => {
+const AdminSidebar = ({ isOpen, onClose }) => {
     const { hasPermission } = useAdminAuth();
 
     // Definir items de navegación con sus permisos requeridos
@@ -56,9 +57,11 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
         <>
             {/* Overlay para mobile - cierra el sidebar al hacer click */}
             {isOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                <button
+                    type="button"
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden w-full h-full cursor-default"
                     onClick={onClose}
+                    aria-label="Cerrar menú lateral"
                 />
             )}
 
@@ -75,7 +78,7 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
                             end={item.exact}
                             onClick={() => {
                                 // Cerrar sidebar en móvil al hacer click en un link
-                                if (window.innerWidth < 1024) {
+                                if (globalThis.innerWidth < 1024) {
                                     onClose?.();
                                 }
                             }}
@@ -112,6 +115,11 @@ const AdminSidebar = ({ isOpen, onClose, rol }) => {
             </aside>
         </>
     );
+};
+
+AdminSidebar.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired
 };
 
 export default AdminSidebar;

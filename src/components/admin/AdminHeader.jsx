@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabase/client';
 
@@ -128,6 +129,15 @@ const AdminHeader = ({ user, rol, onToggleSidebar, sidebarOpen }) => {
             </div>
         </header>
     );
+};
+
+AdminHeader.propTypes = {
+    user: PropTypes.shape({
+        nombre: PropTypes.string
+    }),
+    rol: PropTypes.string,
+    onToggleSidebar: PropTypes.func.isRequired,
+    sidebarOpen: PropTypes.bool.isRequired
 };
 
 export default AdminHeader;

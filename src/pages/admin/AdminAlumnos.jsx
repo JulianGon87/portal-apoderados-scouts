@@ -206,63 +206,65 @@ export default function AdminAlumnos() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {loading ? (
+                            {loading && (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-12 text-center">
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-scout-blue mx-auto"></div>
                                     </td>
                                 </tr>
-                            ) : filteredAlumnos.length === 0 ? (
+                            )}
+
+                            {!loading && filteredAlumnos.length === 0 && (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                                         No se encontraron alumnos
                                     </td>
                                 </tr>
-                            ) : (
-                                filteredAlumnos.map((alumno) => (
-                                    <tr key={alumno.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-lg overflow-hidden">
-                                                    {alumno.foto_url ? (
-                                                        <img src={alumno.foto_url} alt="" className="h-full w-full object-cover" />
-                                                    ) : (
-                                                        '👤'
-                                                    )}
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">{alumno.nombre} {alumno.apellidos_alumno}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {alumno.rut_alumno}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${getSeccionBadgeColor(alumno.seccion)}`}>
-                                                {alumno.seccion}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {alumno.curso || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => handleEdit(alumno)}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(alumno.id)}
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                Eliminar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
                             )}
+
+                            {!loading && filteredAlumnos.length > 0 && filteredAlumnos.map((alumno) => (
+                                <tr key={alumno.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-lg overflow-hidden">
+                                                {alumno.foto_url ? (
+                                                    <img src={alumno.foto_url} alt="" className="h-full w-full object-cover" />
+                                                ) : (
+                                                    '👤'
+                                                )}
+                                            </div>
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-gray-900">{alumno.nombre} {alumno.apellidos_alumno}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {alumno.rut_alumno}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${getSeccionBadgeColor(alumno.seccion)}`}>
+                                            {alumno.seccion}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {alumno.curso || '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button
+                                            onClick={() => handleEdit(alumno)}
+                                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(alumno.id)}
+                                            className="text-red-600 hover:text-red-900"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
