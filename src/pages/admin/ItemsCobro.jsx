@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { supabase } from '../../supabase/client';
 import useAdminAuth from '../../hooks/useAdminAuth';
 import ItemCobroForm from '../../components/admin/ItemCobroForm';
@@ -41,6 +42,18 @@ const GroupedItemsList = ({ items, getMonthName, hasPermission, onEdit, onDelete
         </div>
     </div>
 );
+
+GroupedItemsList.propTypes = {
+    items: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        mes: PropTypes.number,
+        monto: PropTypes.number.isRequired,
+    })).isRequired,
+    getMonthName: PropTypes.func.isRequired,
+    hasPermission: PropTypes.func.isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
+};
 
 /**
  * Componente para renderizar una tarjeta de item (grupo o individual)
@@ -149,6 +162,30 @@ const ItemCard = ({ item, getTipoLabel, getTipoBadgeColor, getMonthName, hasPerm
             )}
         </div>
     );
+};
+
+ItemCard.propTypes = {
+    item: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        tipo_item: PropTypes.string.isRequired,
+        descripcion: PropTypes.string.isRequired,
+        monto: PropTypes.number.isRequired,
+        anio: PropTypes.number.isRequired,
+        seccion: PropTypes.string,
+        mes: PropTypes.number,
+        isGroup: PropTypes.bool,
+        groupedItems: PropTypes.array,
+        monthRange: PropTypes.string,
+    }).isRequired,
+    getTipoLabel: PropTypes.func.isRequired,
+    getTipoBadgeColor: PropTypes.func.isRequired,
+    getMonthName: PropTypes.func.isRequired,
+    hasPermission: PropTypes.func.isRequired,
+    expandedGroups: PropTypes.instanceOf(Set).isRequired,
+    onToggleGroup: PropTypes.func.isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
+    onDeleteGroup: PropTypes.func.isRequired,
 };
 
 /**
