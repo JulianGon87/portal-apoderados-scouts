@@ -143,7 +143,6 @@ const getPermissionsByRole = (rol) => {
             'ver_metricas'
         ],
         jefe: [
-            'crear_alumnos',
             'designar_logros'
         ],
         tesorero: [

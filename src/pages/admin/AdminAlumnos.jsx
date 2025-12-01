@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase/client';
 import { useToast } from '../../components/Toast';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 export default function AdminAlumnos() {
     const { addToast } = useToast();
+    const { hasPermission } = useAdminAuth(['crear_alumnos', 'editar_alumnos']);
 
     const [alumnos, setAlumnos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,8 +13,18 @@ export default function AdminAlumnos() {
     const [filterSeccion, setFilterSeccion] = useState('todos');
     const [showModal, setShowModal] = useState(false);
     const [editingAlumno, setEditingAlumno] = useState(null);
+    const [apoderadoFound, setApoderadoFound] = useState(null);
+    const [checkingRut, setCheckingRut] = useState(false);
+
     const [formData, setFormData] = useState({
-        nombre: '',
+        // Datos del Apoderado
+        rut_apoderado: '',
+        nombre_apoderado: '',
+        apellidos_apoderado: '',
+        email_apoderado: '',
+        telefono_apoderado: '',
+        // Datos del Alumno
+        nombre_alumno: '',
         apellidos_alumno: '',
         rut_alumno: '',
         seccion: 'manada',
@@ -28,7 +40,10 @@ export default function AdminAlumnos() {
             setLoading(true);
             const { data, error } = await supabase
                 .from('alumnos')
-                .select('*')
+                .select(`
+                    *,
+                    apoderado:users!apoderado_id(nombre, apellidos, rut, email, telefono)
+                `)
                 .order('apellidos_alumno', { ascending: true });
 
             if (error) throw error;
@@ -46,49 +61,182 @@ export default function AdminAlumnos() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Buscar apoderado por RUT
+    const handleApoderadoRutBlur = async () => {
+        const rut = formData.rut_apoderado.trim();
+        if (!rut || editingAlumno) return;
+
+        setCheckingRut(true);
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, nombre, apellidos, rut, email, telefono')
+                .eq('rut', rut)
+                .single();
+
+            if (data) {
+                setApoderadoFound(data);
+                setFormData(prev => ({
+                    ...prev,
+                    nombre_apoderado: data.nombre || '',
+                    apellidos_apoderado: data.apellidos || '',
+                    email_apoderado: data.email || '',
+                    telefono_apoderado: data.telefono || ''
+                }));
+                addToast('Apoderado encontrado. Datos cargados automáticamente.', 'success');
+            } else {
+                setApoderadoFound(null);
+                addToast('Apoderado no encontrado. Se creará uno nuevo.', 'info');
+            }
+        } catch (error) {
+            // No existe, se creará nuevo
+            setApoderadoFound(null);
+        } finally {
+            setCheckingRut(false);
+        }
+    };
+
+    // Validar RUT del alumno
+    const handleAlumnoRutBlur = async () => {
+        const rut = formData.rut_alumno.trim();
+        if (!rut || editingAlumno) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('alumnos')
+                .select('id')
+                .eq('rut_alumno', rut)
+                .single();
+
+            if (data) {
+                addToast('Este RUT de alumno ya está registrado', 'error');
+                setFormData(prev => ({ ...prev, rut_alumno: '' }));
+            }
+        } catch (error) {
+            // No existe, todo bien
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            // Generar slug básico si es nuevo
-            const slugBase = `${formData.nombre}-${formData.apellidos_alumno}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const uniqueSlug = `${slugBase}-${Math.random().toString(36).slice(2, 7)}`;
 
-            const dataToSave = {
-                nombre: formData.nombre,
-                apellidos_alumno: formData.apellidos_alumno,
-                rut_alumno: formData.rut_alumno,
-                seccion: formData.seccion,
-                curso: formData.curso
-            };
+        if (!hasPermission('crear_alumnos')) {
+            addToast('No tienes permisos para crear alumnos', 'error');
+            return;
+        }
+
+        try {
+            setLoading(true);
 
             if (editingAlumno) {
-                // Editar
+                // EDITAR: Solo actualizar datos del alumno
                 const { error } = await supabase
                     .from('alumnos')
-                    .update(dataToSave)
+                    .update({
+                        nombre: formData.nombre_alumno,
+                        apellidos_alumno: formData.apellidos_alumno,
+                        rut_alumno: formData.rut_alumno,
+                        seccion: formData.seccion,
+                        curso: formData.curso
+                    })
                     .eq('id', editingAlumno.id);
+
                 if (error) throw error;
                 addToast('Alumno actualizado exitosamente', 'success');
             } else {
-                // Crear
-                dataToSave.slug = uniqueSlug;
-                const { error } = await supabase.from('alumnos').insert([dataToSave]);
-                if (error) throw error;
-                addToast('Alumno creado exitosamente', 'success');
+                // CREAR: Apoderado + Alumno
+                let apoderadoId;
+
+                if (apoderadoFound) {
+                    // Usar apoderado existente
+                    apoderadoId = apoderadoFound.id;
+                } else {
+                    // Crear nuevo apoderado
+                    const { data: newApoderado, error: apoderadoError } = await supabase
+                        .from('users')
+                        .insert([{
+                            rut: formData.rut_apoderado,
+                            nombre: formData.nombre_apoderado,
+                            apellidos: formData.apellidos_apoderado,
+                            email: formData.email_apoderado,
+                            telefono: formData.telefono_apoderado,
+                            rol: 'apoderado'
+                        }])
+                        .select()
+                        .single();
+
+                    if (apoderadoError) throw apoderadoError;
+                    apoderadoId = newApoderado.id;
+
+                    // Crear usuario en Supabase Auth
+                    const tempPassword = `Scout${formData.rut_apoderado.slice(0, 4)}!`;
+                    const { error: authError } = await supabase.auth.admin.createUser({
+                        email: `${formData.rut_apoderado}@scouts.cl`,
+                        password: tempPassword,
+                        email_confirm: true
+                    });
+
+                    if (authError) {
+                        console.warn('Error creando usuario auth:', authError);
+                    }
+                }
+
+                // Crear alumno
+                const slugBase = `${formData.nombre_alumno}-${formData.apellidos_alumno}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const uniqueSlug = `${slugBase}-${Math.random().toString(36).slice(2, 7)}`;
+
+                const { error: alumnoError } = await supabase
+                    .from('alumnos')
+                    .insert([{
+                        nombre: formData.nombre_alumno,
+                        apellidos_alumno: formData.apellidos_alumno,
+                        rut_alumno: formData.rut_alumno,
+                        seccion: formData.seccion,
+                        curso: formData.curso,
+                        apoderado_id: apoderadoId,
+                        slug: uniqueSlug
+                    }]);
+
+                if (alumnoError) throw alumnoError;
+                addToast('Alumno y apoderado registrados exitosamente', 'success');
             }
 
             setShowModal(false);
+            resetForm();
             fetchAlumnos();
         } catch (error) {
-            console.error('Error al guardar alumno:', error);
+            console.error('Error al guardar:', error);
             addToast('Error al guardar: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            rut_apoderado: '',
+            nombre_apoderado: '',
+            apellidos_apoderado: '',
+            email_apoderado: '',
+            telefono_apoderado: '',
+            nombre_alumno: '',
+            apellidos_alumno: '',
+            rut_alumno: '',
+            seccion: 'manada',
+            curso: ''
+        });
+        setApoderadoFound(null);
     };
 
     const handleEdit = (alumno) => {
         setEditingAlumno(alumno);
         setFormData({
-            nombre: alumno.nombre,
+            rut_apoderado: alumno.apoderado?.rut || '',
+            nombre_apoderado: alumno.apoderado?.nombre || '',
+            apellidos_apoderado: alumno.apoderado?.apellidos || '',
+            email_apoderado: alumno.apoderado?.email || '',
+            telefono_apoderado: alumno.apoderado?.telefono || '',
+            nombre_alumno: alumno.nombre,
             apellidos_alumno: alumno.apellidos_alumno,
             rut_alumno: alumno.rut_alumno,
             seccion: alumno.seccion || 'manada',
@@ -113,13 +261,7 @@ export default function AdminAlumnos() {
 
     const handleNew = () => {
         setEditingAlumno(null);
-        setFormData({
-            nombre: '',
-            apellidos_alumno: '',
-            rut_alumno: '',
-            seccion: 'manada',
-            curso: ''
-        });
+        resetForm();
         setShowModal(true);
     };
 
@@ -140,7 +282,9 @@ export default function AdminAlumnos() {
         const matchSearch =
             alumno.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             alumno.apellidos_alumno?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            alumno.rut_alumno?.includes(searchTerm);
+            alumno.rut_alumno?.includes(searchTerm) ||
+            alumno.apoderado?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            alumno.apoderado?.apellidos?.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchSeccion = filterSeccion === 'todos' || alumno.seccion === filterSeccion;
 
@@ -152,14 +296,16 @@ export default function AdminAlumnos() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Gestión de Alumnos</h1>
-                    <p className="text-gray-600 mt-1">Administra la información de los beneficiarios</p>
+                    <p className="text-gray-600 mt-1">Administra la información de los beneficiarios y sus apoderados</p>
                 </div>
-                <button
-                    onClick={handleNew}
-                    className="btn-scout flex items-center gap-2"
-                >
-                    <span>➕</span> Nuevo Alumno
-                </button>
+                {hasPermission('crear_alumnos') && (
+                    <button
+                        onClick={handleNew}
+                        className="btn-scout flex items-center gap-2"
+                    >
+                        <span>➕</span> Nuevo Alumno
+                    </button>
+                )}
             </div>
 
             {/* Filtros */}
@@ -169,7 +315,7 @@ export default function AdminAlumnos() {
                     <input
                         id="search-alumnos"
                         type="text"
-                        placeholder="Buscar por nombre, apellido o RUT..."
+                        placeholder="Buscar por nombre, apellido, RUT o apoderado..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
@@ -200,6 +346,7 @@ export default function AdminAlumnos() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RUT</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apoderado</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sección</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -208,7 +355,7 @@ export default function AdminAlumnos() {
                         <tbody className="divide-y divide-gray-200">
                             {loading && (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-12 text-center">
+                                    <td colSpan="6" className="px-6 py-12 text-center">
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-scout-blue mx-auto"></div>
                                     </td>
                                 </tr>
@@ -216,7 +363,7 @@ export default function AdminAlumnos() {
 
                             {!loading && filteredAlumnos.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                         No se encontraron alumnos
                                     </td>
                                 </tr>
@@ -241,6 +388,9 @@ export default function AdminAlumnos() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {alumno.rut_alumno}
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {alumno.apoderado ? `${alumno.apoderado.nombre} ${alumno.apoderado.apellidos}` : '-'}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${getSeccionBadgeColor(alumno.seccion)}`}>
                                             {alumno.seccion}
@@ -250,18 +400,22 @@ export default function AdminAlumnos() {
                                         {alumno.curso || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button
-                                            onClick={() => handleEdit(alumno)}
-                                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                        >
-                                            Editar
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(alumno.id)}
-                                            className="text-red-600 hover:text-red-900"
-                                        >
-                                            Eliminar
-                                        </button>
+                                        {hasPermission('editar_alumnos') && (
+                                            <button
+                                                onClick={() => handleEdit(alumno)}
+                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                            >
+                                                Editar
+                                            </button>
+                                        )}
+                                        {hasPermission('eliminar_alumnos') && (
+                                            <button
+                                                onClick={() => handleDelete(alumno.id)}
+                                                className="text-red-600 hover:text-red-900"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -273,93 +427,190 @@ export default function AdminAlumnos() {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl animate-fade-in-up">
+                    <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl animate-fade-in-up max-h-[90vh] overflow-y-auto">
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                            {editingAlumno ? 'Editar Alumno' : 'Nuevo Alumno'}
+                            {editingAlumno ? 'Editar Alumno' : 'Nuevo Alumno y Apoderado'}
                         </h2>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                <input
-                                    id="nombre"
-                                    type="text"
-                                    name="nombre"
-                                    required
-                                    value={formData.nombre}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="apellidos_alumno" className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-                                <input
-                                    id="apellidos_alumno"
-                                    type="text"
-                                    name="apellidos_alumno"
-                                    required
-                                    value={formData.apellidos_alumno}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="rut_alumno" className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
-                                    <input
-                                        id="rut_alumno"
-                                        type="text"
-                                        name="rut_alumno"
-                                        required
-                                        value={formData.rut_alumno}
-                                        onChange={handleInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                    />
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Sección Apoderado */}
+                            {!editingAlumno && (
+                                <div className="border-b pb-6">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span>👨‍👩‍👧</span> Datos del Apoderado
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label htmlFor="rut_apoderado" className="block text-sm font-medium text-gray-700 mb-1">
+                                                RUT Apoderado *
+                                            </label>
+                                            <input
+                                                id="rut_apoderado"
+                                                type="text"
+                                                name="rut_apoderado"
+                                                required
+                                                value={formData.rut_apoderado}
+                                                onChange={handleInputChange}
+                                                onBlur={handleApoderadoRutBlur}
+                                                disabled={checkingRut}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                                placeholder="12345678-9"
+                                            />
+                                            {checkingRut && <p className="text-xs text-gray-500 mt-1">Buscando...</p>}
+                                            {apoderadoFound && <p className="text-xs text-green-600 mt-1">✅ Apoderado encontrado</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="nombre_apoderado" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Nombre *
+                                            </label>
+                                            <input
+                                                id="nombre_apoderado"
+                                                type="text"
+                                                name="nombre_apoderado"
+                                                required
+                                                value={formData.nombre_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={!!apoderadoFound}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue disabled:bg-gray-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="apellidos_apoderado" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Apellidos *
+                                            </label>
+                                            <input
+                                                id="apellidos_apoderado"
+                                                type="text"
+                                                name="apellidos_apoderado"
+                                                required
+                                                value={formData.apellidos_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={!!apoderadoFound}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue disabled:bg-gray-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="email_apoderado" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Email
+                                            </label>
+                                            <input
+                                                id="email_apoderado"
+                                                type="email"
+                                                name="email_apoderado"
+                                                value={formData.email_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={!!apoderadoFound}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue disabled:bg-gray-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="telefono_apoderado" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Teléfono
+                                            </label>
+                                            <input
+                                                id="telefono_apoderado"
+                                                type="tel"
+                                                name="telefono_apoderado"
+                                                value={formData.telefono_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={!!apoderadoFound}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue disabled:bg-gray-100"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label htmlFor="curso" className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
-                                    <input
-                                        id="curso"
-                                        type="text"
-                                        name="curso"
-                                        value={formData.curso}
-                                        onChange={handleInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                    />
+                            )}
+
+                            {/* Sección Alumno */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span>🎒</span> Datos del Alumno
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="nombre_alumno" className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                                        <input
+                                            id="nombre_alumno"
+                                            type="text"
+                                            name="nombre_alumno"
+                                            required
+                                            value={formData.nombre_alumno}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="apellidos_alumno" className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                                        <input
+                                            id="apellidos_alumno"
+                                            type="text"
+                                            name="apellidos_alumno"
+                                            required
+                                            value={formData.apellidos_alumno}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="rut_alumno" className="block text-sm font-medium text-gray-700 mb-1">RUT *</label>
+                                        <input
+                                            id="rut_alumno"
+                                            type="text"
+                                            name="rut_alumno"
+                                            required
+                                            value={formData.rut_alumno}
+                                            onChange={handleInputChange}
+                                            onBlur={handleAlumnoRutBlur}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                            placeholder="12345678-9"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="curso" className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                        <input
+                                            id="curso"
+                                            type="text"
+                                            name="curso"
+                                            value={formData.curso}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Sección *</label>
+                                        <select
+                                            id="seccion"
+                                            name="seccion"
+                                            value={formData.seccion}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
+                                        >
+                                            <option value="manada">Manada</option>
+                                            <option value="tropa">Tropa</option>
+                                            <option value="compañia">Compañía</option>
+                                            <option value="comunidad">Comunidad</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
-                                <select
-                                    id="seccion"
-                                    name="seccion"
-                                    value={formData.seccion}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                >
-                                    <option value="manada">Manada</option>
-                                    <option value="tropa">Tropa</option>
-                                    <option value="compañia">Compañía</option>
-                                    <option value="comunidad">Comunidad</option>
-                                </select>
-                            </div>
-
-                            <div className="flex justify-end gap-3 mt-6">
+                            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                                 <button
                                     type="button"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        resetForm();
+                                    }}
                                     className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                                 >
-                                    {editingAlumno ? 'Guardar Cambios' : 'Crear Alumno'}
+                                    {loading ? 'Guardando...' : editingAlumno ? 'Guardar Cambios' : 'Crear Alumno'}
                                 </button>
                             </div>
                         </form>
