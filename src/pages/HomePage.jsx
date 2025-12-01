@@ -288,6 +288,10 @@ export default function HomePage() {
             <div
               className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
               onClick={() => setShowSidebar(false)}
+              onKeyDown={(e) => e.key === 'Escape' && setShowSidebar(false)}
+              role="button"
+              tabIndex={0}
+              aria-label="Cerrar menú lateral"
             />
           )}
 

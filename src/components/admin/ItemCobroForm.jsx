@@ -48,21 +48,63 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
         });
     };
 
+    const validateForm = () => {
+        if (!formData.descripcion.trim()) return 'La descripción es requerida';
+        if (!formData.monto || Number(formData.monto) <= 0) return 'El monto debe ser mayor a 0';
+        if (formData.tipo_item === 'cuota_mensual' && formData.meses.length === 0) return 'Debe seleccionar al menos un mes';
+        return null;
+    };
+
+    const getCreatorId = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('No hay usuario autenticado');
+
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('auth_user_id', user.id)
+            .single();
+
+        if (userError) throw userError;
+        return userData.id;
+    };
+
+    const createItems = async (baseData, creatorId) => {
+        if (formData.tipo_item === 'cuota_mensual') {
+            const itemsToInsert = formData.meses.map((m) => ({
+                ...baseData,
+                mes: parseInt(m),
+                created_by: creatorId
+            }));
+            const { error } = await supabase.from('items_pago').insert(itemsToInsert);
+            if (error) throw error;
+        } else {
+            const dataToInsert = {
+                ...baseData,
+                mes: null,
+                created_by: creatorId
+            };
+            const { error } = await supabase.from('items_pago').insert([dataToInsert]);
+            if (error) throw error;
+        }
+    };
+
+    const updateItem = async (baseData) => {
+        const dataToUpdate = {
+            ...baseData,
+            mes: formData.tipo_item === 'cuota_mensual' ? parseInt(formData.meses[0] || 0) : null,
+        };
+        const { error } = await supabase.from('items_pago').update(dataToUpdate).eq('id', item.id);
+        if (error) throw error;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        // Validaciones básicas
-        if (!formData.descripcion.trim()) {
-            setError('La descripción es requerida');
-            return;
-        }
-        if (!formData.monto || Number(formData.monto) <= 0) {
-            setError('El monto debe ser mayor a 0');
-            return;
-        }
-        if (formData.tipo_item === 'cuota_mensual' && formData.meses.length === 0) {
-            setError('Debe seleccionar al menos un mes');
+        const validationError = validateForm();
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
@@ -77,59 +119,17 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
         try {
             setLoading(true);
 
-            // Obtener el usuario actual
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('No hay usuario autenticado');
-
-            // Obtener el ID del usuario en la tabla users
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userError) {
-                console.error('Error obteniendo usuario:', userError);
-                throw userError;
-            }
-
-            console.log('Usuario autenticado:', user.id);
-            console.log('ID en tabla users:', userData?.id);
-
             if (item) {
-                // Edición: solo un registro, tomamos el primer mes si es cuota mensual
-                const dataToUpdate = {
-                    ...baseData,
-                    mes: formData.tipo_item === 'cuota_mensual' ? parseInt(formData.meses[0] || 0) : null,
-                };
-                const { error: updErr } = await supabase.from('items_pago').update(dataToUpdate).eq('id', item.id);
-                if (updErr) throw updErr;
+                await updateItem(baseData);
                 alert('Item actualizado exitosamente');
             } else {
-                if (formData.tipo_item === 'cuota_mensual') {
-                    // Insertar un registro por cada mes seleccionado
-                    const itemsToInsert = formData.meses.map((m) => ({
-                        ...baseData,
-                        mes: parseInt(m),
-                        created_by: userData.id
-                    }));
-                    const { error: insErr } = await supabase.from('items_pago').insert(itemsToInsert);
-                    if (insErr) throw insErr;
-                } else {
-                    // Otros tipos: un solo registro
-                    const dataToInsert = {
-                        ...baseData,
-                        mes: null,
-                        created_by: userData.id
-                    };
-                    const { error: insErr } = await supabase.from('items_pago').insert([dataToInsert]);
-                    if (insErr) throw insErr;
-                }
+                const creatorId = await getCreatorId();
+                await createItems(baseData, creatorId);
                 alert('Item creado exitosamente');
             }
             onSuccess();
         } catch (err) {
-            console.error('Error al guardar item:', err);
+            console.error('Error al guardar item:', err.message);
             setError('Error al guardar el item: ' + err.message);
         } finally {
             setLoading(false);
