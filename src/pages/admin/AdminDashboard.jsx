@@ -100,7 +100,8 @@ const fetchActivity = async () => {
                 icon: '🎫',
                 title: `Nuevo ticket #${ticket.id}`,
                 subtitle: `${ticket.alumno?.nombre} ${ticket.alumno?.apellidos} - $${ticket.monto_total?.toLocaleString('es-CL')}`,
-                timestamp: ticket.created_at
+                timestamp: ticket.created_at,
+                id: ticket.id
             });
         });
     }
@@ -134,16 +135,17 @@ const fetchActivity = async () => {
                 icon: '💰',
                 title: `Item creado: ${item.descripcion}`,
                 subtitle: `$${item.monto?.toLocaleString('es-CL')} - ${item.seccion || 'Todos'} - Por ${creatorName}`,
-                timestamp: item.created_at
+                timestamp: item.created_at,
+                id: item.id
             });
         });
     }
 
-    return activity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
+    return [...activity].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
 };
 
 const AdminDashboard = () => {
-    const { hasPermission, isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
+    const { isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
     const [stats, setStats] = useState({
         totalRecaudado: 0,
         ticketsPendientes: 0,
@@ -257,7 +259,7 @@ const AdminDashboard = () => {
                 {recentActivity.length > 0 ? (
                     <div className="space-y-3">
                         {recentActivity.map((activity) => (
-                            <div key={`${activity.type}-${activity.timestamp}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <div className="flex items-center">
                                     <span className="text-2xl mr-3">{activity.icon}</span>
                                     <div>

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-// Meses que se muestran en la UI (todo el año)
+// Lista de meses para mostrar en la interfaz (año completo)
 const MONTHS = [
     { id: 1, name: 'Enero' },
     { id: 2, name: 'Febrero' },

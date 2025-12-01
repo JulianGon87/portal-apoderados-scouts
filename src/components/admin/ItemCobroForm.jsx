@@ -223,10 +223,10 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Meses (solo para cuota mensual) */}
             {formData.tipo_item === 'cuota_mensual' && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                <fieldset>
+                    <legend className="block text-sm font-medium text-gray-700 mb-1">
                         Meses <span className="text-red-500">*</span>
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-3 gap-2">
                         {MONTH_OPTIONS.map((m) => (
                             <label key={m.id} htmlFor={`mes-${m.id}`} className="inline-flex items-center">
@@ -241,7 +241,7 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
                             </label>
                         ))}
                     </div>
-                </div>
+                </fieldset>
             )}
 
             {/* Sección */}
@@ -299,6 +299,10 @@ ItemCobroForm.propTypes = {
     }),
     onSuccess: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
+};
+
+ItemCobroForm.defaultProps = {
+    item: null,
 };
 
 export default ItemCobroForm;

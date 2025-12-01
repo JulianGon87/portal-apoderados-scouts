@@ -49,8 +49,8 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
             {/* Resumen de Otros Pagos (Mini badges) */}
             {paymentGroups.otros.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
-                    {paymentGroups.otros.slice(0, 3).map((p, i) => (
-                        <span key={i} className={`text-[10px] px-2 py-1 rounded-full border truncate max-w-[120px] ${p.isPaid ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                    {paymentGroups.otros.slice(0, 3).map((p) => (
+                        <span key={p.id} className={`text-[10px] px-2 py-1 rounded-full border truncate max-w-[120px] ${p.isPaid ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
                             {p.tipo_item === 'campamento' ? '⛺' : p.tipo_item === 'evento' ? '🎉' : '🏷️'} {p.descripcion}
                         </span>
                     ))}

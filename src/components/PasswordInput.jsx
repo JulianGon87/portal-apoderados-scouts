@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-export default function PasswordInput({
+const PasswordInput = ({
     id,
     name,
     value,
@@ -12,7 +12,7 @@ export default function PasswordInput({
     className = "",
     required = false,
     autoComplete = "current-password"
-}) {
+}) => {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
@@ -39,6 +39,7 @@ export default function PasswordInput({
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                     tabIndex={-1}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                     {showPassword ? (
                         // Ojo cerrado (ocultar)
@@ -56,7 +57,7 @@ export default function PasswordInput({
             </div>
         </div>
     );
-}
+};
 
 PasswordInput.propTypes = {
     id: PropTypes.string.isRequired,
@@ -69,3 +70,5 @@ PasswordInput.propTypes = {
     required: PropTypes.bool,
     autoComplete: PropTypes.string,
 };
+
+export default PasswordInput;
