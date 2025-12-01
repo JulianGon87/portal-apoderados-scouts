@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase/client';
-import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useToast } from '../../components/Toast';
 
 export default function AdminAlumnos() {
-    const { hasPermission } = useAdminAuth();
     const { addToast } = useToast();
 
     const [alumnos, setAlumnos] = useState([]);
@@ -53,7 +51,7 @@ export default function AdminAlumnos() {
         try {
             // Generar slug básico si es nuevo
             const slugBase = `${formData.nombre}-${formData.apellidos_alumno}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const uniqueSlug = `${slugBase}-${Math.random().toString(36).substr(2, 5)}`;
+            const uniqueSlug = `${slugBase}-${Math.random().toString(36).slice(2, 7)}`;
 
             const dataToSave = {
                 nombre: formData.nombre,
@@ -63,13 +61,7 @@ export default function AdminAlumnos() {
                 curso: formData.curso
             };
 
-            if (!editingAlumno) {
-                // Crear
-                dataToSave.slug = uniqueSlug;
-                const { error } = await supabase.from('alumnos').insert([dataToSave]);
-                if (error) throw error;
-                addToast('Alumno creado exitosamente', 'success');
-            } else {
+            if (editingAlumno) {
                 // Editar
                 const { error } = await supabase
                     .from('alumnos')
@@ -77,6 +69,12 @@ export default function AdminAlumnos() {
                     .eq('id', editingAlumno.id);
                 if (error) throw error;
                 addToast('Alumno actualizado exitosamente', 'success');
+            } else {
+                // Crear
+                dataToSave.slug = uniqueSlug;
+                const { error } = await supabase.from('alumnos').insert([dataToSave]);
+                if (error) throw error;
+                addToast('Alumno creado exitosamente', 'success');
             }
 
             setShowModal(false);
@@ -125,6 +123,19 @@ export default function AdminAlumnos() {
         setShowModal(true);
     };
 
+    const getSeccionBadgeColor = (seccion) => {
+        switch (seccion) {
+            case 'manada':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'tropa':
+                return 'bg-green-100 text-green-800';
+            case 'compañia':
+                return 'bg-blue-100 text-blue-800';
+            default:
+                return 'bg-red-100 text-red-800';
+        }
+    };
+
     const filteredAlumnos = alumnos.filter(alumno => {
         const matchSearch =
             alumno.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -154,7 +165,9 @@ export default function AdminAlumnos() {
             {/* Filtros */}
             <div className="card-glass p-4 flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
+                    <label htmlFor="search-alumnos" className="sr-only">Buscar alumnos</label>
                     <input
+                        id="search-alumnos"
                         type="text"
                         placeholder="Buscar por nombre, apellido o RUT..."
                         value={searchTerm}
@@ -163,7 +176,9 @@ export default function AdminAlumnos() {
                     />
                 </div>
                 <div className="w-full md:w-48">
+                    <label htmlFor="filter-seccion" className="sr-only">Filtrar por sección</label>
                     <select
+                        id="filter-seccion"
                         value={filterSeccion}
                         onChange={(e) => setFilterSeccion(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
@@ -224,11 +239,7 @@ export default function AdminAlumnos() {
                                             {alumno.rut_alumno}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize
-                                                ${alumno.seccion === 'manada' ? 'bg-yellow-100 text-yellow-800' :
-                                                    alumno.seccion === 'tropa' ? 'bg-green-100 text-green-800' :
-                                                        alumno.seccion === 'compañia' ? 'bg-blue-100 text-blue-800' :
-                                                            'bg-red-100 text-red-800'}`}>
+                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${getSeccionBadgeColor(alumno.seccion)}`}>
                                                 {alumno.seccion}
                                             </span>
                                         </td>
@@ -267,8 +278,9 @@ export default function AdminAlumnos() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                                 <input
+                                    id="nombre"
                                     type="text"
                                     name="nombre"
                                     required
@@ -279,8 +291,9 @@ export default function AdminAlumnos() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                                <label htmlFor="apellidos_alumno" className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
                                 <input
+                                    id="apellidos_alumno"
                                     type="text"
                                     name="apellidos_alumno"
                                     required
@@ -292,8 +305,9 @@ export default function AdminAlumnos() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+                                    <label htmlFor="rut_alumno" className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
                                     <input
+                                        id="rut_alumno"
                                         type="text"
                                         name="rut_alumno"
                                         required
@@ -303,8 +317,9 @@ export default function AdminAlumnos() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                    <label htmlFor="curso" className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
                                     <input
+                                        id="curso"
                                         type="text"
                                         name="curso"
                                         value={formData.curso}
@@ -315,8 +330,9 @@ export default function AdminAlumnos() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
+                                <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
                                 <select
+                                    id="seccion"
                                     name="seccion"
                                     value={formData.seccion}
                                     onChange={handleInputChange}
