@@ -4,7 +4,7 @@ import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useToast } from '../../components/Toast';
 
 export default function AdminUsuarios() {
-    const { hasPermission, user: currentUser } = useAdminAuth();
+    const { user: currentUser } = useAdminAuth();
     const { addToast } = useToast();
 
     const [usuarios, setUsuarios] = useState([]);
@@ -249,8 +249,9 @@ export default function AdminUsuarios() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                                 <input
+                                    id="nombre"
                                     type="text"
                                     name="nombre"
                                     required
@@ -261,8 +262,9 @@ export default function AdminUsuarios() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">RUT (sin puntos ni guión)</label>
+                                <label htmlFor="rut" className="block text-sm font-medium text-gray-700 mb-1">RUT (sin puntos ni guión)</label>
                                 <input
+                                    id="rut"
                                     type="text"
                                     name="rut"
                                     required
@@ -276,8 +278,9 @@ export default function AdminUsuarios() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                                <label htmlFor="rol" className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                                 <select
+                                    id="rol"
                                     name="rol"
                                     value={formData.rol}
                                     onChange={handleInputChange}

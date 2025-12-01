@@ -5,7 +5,7 @@ import { useToast } from '../../components/Toast';
 import * as XLSX from 'xlsx';
 
 export default function AdminPagos() {
-    const { hasPermission, isLoading: authLoading, user } = useAdminAuth(['aprobar_pagos', 'ver_metricas']);
+    const { hasPermission, isLoading: authLoading } = useAdminAuth(['aprobar_pagos', 'ver_metricas']);
     const { addToast } = useToast();
 
     // State
@@ -180,7 +180,7 @@ export default function AdminPagos() {
                 const dateStr = item.source === 'pago' ? (item.fecha_pago || item.fecha_aprobacion) : item.created_at;
                 const date = parseDateLocal(dateStr);
 
-                matchMonth = date.getMonth() === parseInt(filterMonth);
+                matchMonth = date.getMonth() === parseInt(filterMonth, 10);
             }
 
             return matchSearch && matchSeccion && matchTipo && matchMonth;

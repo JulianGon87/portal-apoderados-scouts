@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import StatsCard from '../../components/admin/StatsCard';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { supabase } from '../../supabase/client';
@@ -143,7 +143,6 @@ const fetchActivity = async () => {
 };
 
 const AdminDashboard = () => {
-    const navigate = useNavigate();
     const { hasPermission, isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
     const [stats, setStats] = useState({
         totalRecaudado: 0,
@@ -257,8 +256,8 @@ const AdminDashboard = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Actividad Reciente</h2>
                 {recentActivity.length > 0 ? (
                     <div className="space-y-3">
-                        {recentActivity.map((activity, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        {recentActivity.map((activity) => (
+                            <div key={`${activity.type}-${activity.timestamp}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <div className="flex items-center">
                                     <span className="text-2xl mr-3">{activity.icon}</span>
                                     <div>
