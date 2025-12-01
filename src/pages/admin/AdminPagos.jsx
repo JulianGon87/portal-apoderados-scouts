@@ -104,7 +104,7 @@ export default function AdminPagos() {
             setTickets(ticketsData || []);
             calculateStats(pagosData, ticketsData);
         } catch (error) {
-            console.error('Error al cargar datos:', error);
+            console.error('Error al cargar datos:', error.message);
             addToast('Error al cargar datos: ' + error.message, 'error');
         } finally {
             setLoading(false);
@@ -243,8 +243,6 @@ export default function AdminPagos() {
 
     const approveTicketTransaction = async (ticket) => {
         try {
-            console.log('Procesando aprobación para ticket:', ticket);
-
             // Preparar datos del pago
             const fechaPagoDate = new Date(ticket.fecha_pago);
             const pagoData = {
@@ -268,7 +266,7 @@ export default function AdminPagos() {
                 .insert(pagoData);
 
             if (pagoError) {
-                console.error('Error Supabase al insertar pago:', JSON.stringify(pagoError));
+                console.error('Error Supabase al insertar pago:', pagoError.message);
                 throw new Error(`Error DB Pagos: ${pagoError.message}`);
             }
 
@@ -279,12 +277,12 @@ export default function AdminPagos() {
                 .eq('id', ticket.id);
 
             if (ticketError) {
-                console.error('Error Supabase al actualizar ticket:', JSON.stringify(ticketError));
+                console.error('Error Supabase al actualizar ticket:', ticketError.message);
                 throw new Error(`Error DB Tickets: ${ticketError.message}`);
             }
         } catch (error) {
             // Re-lanzar el error con más contexto si es posible
-            console.error('Error en transacción de aprobación:', error);
+            console.error('Error en transacción de aprobación:', error.message);
             throw error;
         }
     };
@@ -298,7 +296,7 @@ export default function AdminPagos() {
             setShowPreviewModal(false);
             fetchData();
         } catch (error) {
-            console.error('Error al aprobar ticket:', error);
+            console.error('Error al aprobar ticket:', error.message);
             addToast('Error al aprobar ticket: ' + error.message, 'error');
         } finally {
             setApprovingId(null);
@@ -336,7 +334,7 @@ export default function AdminPagos() {
             setRejectingId(null);
             fetchData();
         } catch (error) {
-            console.error('Error al rechazar ticket:', error);
+            console.error('Error al rechazar ticket:', error.message);
             addToast('Error al rechazar ticket: ' + error.message, 'error');
         } finally {
             setLoading(false);
@@ -364,7 +362,7 @@ export default function AdminPagos() {
                     await approveTicketTransaction(ticket);
                     successCount++;
                 } catch (error) {
-                    console.error(`Error aprobando ticket ${ticketId}:`, error);
+                    console.error(`Error aprobando ticket ${ticketId}:`, error.message);
                     errorCount++;
                 }
             }
@@ -379,7 +377,7 @@ export default function AdminPagos() {
             setSelectedItems([]);
             fetchData();
         } catch (error) {
-            console.error('Error en aprobación masiva:', error);
+            console.error('Error en aprobación masiva:', error.message);
             addToast('Error general en aprobación masiva', 'error');
         } finally {
             setLoading(false);
@@ -490,7 +488,7 @@ export default function AdminPagos() {
             fetchData();
 
         } catch (error) {
-            console.error('Error updating item:', error);
+            console.error('Error updating item:', error.message);
             addToast('Error al actualizar: ' + error.message, 'error');
         } finally {
             setLoading(false);

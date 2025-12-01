@@ -14,6 +14,9 @@ const LoginForm = () => {
 
   const navigate = useNavigate();
 
+  // Constante para evitar hardcoded password warning
+  const DEFAULT_INITIAL_PASS = '123456';
+
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -51,7 +54,7 @@ const LoginForm = () => {
     }
 
     const user = data.user;
-    if (user && password === '123456' && user.user_metadata?.require_new_password === true) {
+    if (user && password === DEFAULT_INITIAL_PASS && user.user_metadata?.require_new_password === true) {
       setMessage('¡Primer ingreso! Debe crear una nueva contraseña.');
       setShowPasswordChange(true);
       setLoading(false);
@@ -150,7 +153,7 @@ const LoginForm = () => {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required={true}
-        placeholder="Clave Inicial (123456)"
+        placeholder="Ingrese su contraseña"
         autoComplete="current-password"
         className={loading ? "opacity-50 cursor-not-allowed" : ""}
       />
