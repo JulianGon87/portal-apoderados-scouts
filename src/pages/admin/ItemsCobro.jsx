@@ -4,6 +4,154 @@ import useAdminAuth from '../../hooks/useAdminAuth';
 import ItemCobroForm from '../../components/admin/ItemCobroForm';
 
 /**
+ * Componente para renderizar la lista de items agrupados (detalle)
+ */
+const GroupedItemsList = ({ items, getMonthName, hasPermission, onEdit, onDelete }) => (
+    <div className="border-t border-gray-200 bg-gray-50 p-4">
+        <p className="text-sm font-medium text-gray-700 mb-3">Items individuales:</p>
+        <div className="space-y-2">
+            {items.map(individualItem => (
+                <div key={individualItem.id} className="bg-white p-3 rounded-lg flex justify-between items-center">
+                    <div className="text-sm">
+                        <span className="font-medium text-gray-900">{getMonthName(individualItem.mes)}</span>
+                        <span className="text-gray-500 ml-2">- ${individualItem.monto.toLocaleString('es-CL')}</span>
+                    </div>
+                    <div className="flex gap-2">
+                        {hasPermission('editar_items_cobro') && (
+                            <button
+                                onClick={() => onEdit(individualItem)}
+                                className="px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm"
+                                title="Editar"
+                            >
+                                ✏️ Editar
+                            </button>
+                        )}
+                        {hasPermission('eliminar_items_cobro') && (
+                            <button
+                                onClick={() => onDelete(individualItem.id)}
+                                className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-sm"
+                                title="Eliminar"
+                            >
+                                🗑️
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+/**
+ * Componente para renderizar una tarjeta de item (grupo o individual)
+ */
+const ItemCard = ({ item, getTipoLabel, getTipoBadgeColor, getMonthName, hasPermission, expandedGroups, onToggleGroup, onEdit, onDelete, onDeleteGroup }) => {
+    const isExpanded = expandedGroups.has(item.id);
+
+    return (
+        <div className="card-glass overflow-hidden">
+            {/* Main item card */}
+            <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getTipoBadgeColor(item.tipo_item)}`}>
+                            {getTipoLabel(item.tipo_item)}
+                        </span>
+                        {item.seccion ? (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+                                🏕️ {item.seccion}
+                            </span>
+                        ) : (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
+                                🌍 Todos
+                            </span>
+                        )}
+                        {item.isGroup && (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800">
+                                📅 {item.groupedItems.length} meses
+                            </span>
+                        )}
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">{item.descripcion}</h3>
+                    <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                        <div>
+                            <span className="font-medium">Monto:</span> ${item.monto.toLocaleString('es-CL')}
+                        </div>
+                        <div>
+                            <span className="font-medium">Año:</span> {item.anio}
+                        </div>
+                        {item.isGroup ? (
+                            <div>
+                                <span className="font-medium">Meses:</span> {item.monthRange}
+                            </div>
+                        ) : item.mes && (
+                            <div>
+                                <span className="font-medium">Mes:</span> {getMonthName(item.mes)}
+                            </div>
+                        )}
+                    </div>
+                    {item.isGroup && (
+                        <div className="mt-3 text-xs text-gray-500">
+                            <span className="font-medium">Total grupo:</span> ${(item.monto * item.groupedItems.length).toLocaleString('es-CL')}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex gap-2">
+                    {item.isGroup && (
+                        <button
+                            onClick={() => onToggleGroup(item.id)}
+                            className="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title={isExpanded ? "Colapsar" : "Expandir para editar"}
+                        >
+                            {isExpanded ? '🔼 Colapsar' : '🔽 Ver meses'}
+                        </button>
+                    )}
+                    {!item.isGroup && hasPermission('editar_items_cobro') && (
+                        <button
+                            onClick={() => onEdit(item)}
+                            className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Editar"
+                        >
+                            ✏️
+                        </button>
+                    )}
+                    {!item.isGroup && hasPermission('eliminar_items_cobro') && (
+                        <button
+                            onClick={() => onDelete(item.id)}
+                            className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar"
+                        >
+                            🗑️
+                        </button>
+                    )}
+                    {item.isGroup && hasPermission('eliminar_items_cobro') && (
+                        <button
+                            onClick={() => onDeleteGroup(item.groupedItems)}
+                            className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar grupo completo"
+                        >
+                            🗑️ Eliminar todos
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Expanded individual items */}
+            {item.isGroup && isExpanded && (
+                <GroupedItemsList
+                    items={item.groupedItems}
+                    getMonthName={getMonthName}
+                    hasPermission={hasPermission}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                />
+            )}
+        </div>
+    );
+};
+
+/**
  * Página para gestionar items de cobro
  * Permite crear, editar, eliminar y listar items de cobro
  */
@@ -209,6 +357,67 @@ const ItemsCobro = () => {
         return colors[tipo] || 'bg-gray-100 text-gray-800';
     };
 
+    const renderContent = () => {
+        if (loading) {
+            return (
+                <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-scout-blue mx-auto"></div>
+                    <p className="text-gray-600 mt-4">Cargando items...</p>
+                </div>
+            );
+        }
+
+        if (items.length === 0) {
+            return (
+                <div className="card-glass p-12 text-center">
+                    <span className="text-6xl mb-4 block">📋</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">No hay items de cobro</h3>
+                    <p className="text-gray-600">
+                        {filters.search || filters.tipo || filters.anio
+                            ? 'No se encontraron items con los filtros aplicados'
+                            : 'Crea tu primer item de cobro para comenzar'}
+                    </p>
+                </div>
+            );
+        }
+
+        const groupedItems = groupItems(items);
+
+        if (groupedItems.length === 0) {
+            return (
+                <div className="card-glass p-12 text-center">
+                    <span className="text-6xl mb-4 block">📋</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">No hay items de cobro</h3>
+                    <p className="text-gray-600">
+                        {filters.search || filters.tipo || filters.anio
+                            ? 'No se encontraron items con los filtros aplicados'
+                            : 'Crea tu primer item de cobro para comenzar'}
+                    </p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="grid gap-4">
+                {groupedItems.map((item) => (
+                    <ItemCard
+                        key={item.isGroup ? `group-${item.id}` : item.id}
+                        item={item}
+                        getTipoLabel={getTipoLabel}
+                        getTipoBadgeColor={getTipoBadgeColor}
+                        getMonthName={getMonthName}
+                        hasPermission={hasPermission}
+                        expandedGroups={expandedGroups}
+                        onToggleGroup={toggleGroup}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onDeleteGroup={handleDeleteGroup}
+                    />
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -316,169 +525,10 @@ const ItemsCobro = () => {
             )}
 
             {/* Lista de Items */}
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-scout-blue mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Cargando items...</p>
-                </div>
-            ) : items.length === 0 ? (
-                <div className="card-glass p-12 text-center">
-                    <span className="text-6xl mb-4 block">📋</span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">No hay items de cobro</h3>
-                    <p className="text-gray-600">
-                        {filters.search || filters.tipo || filters.anio
-                            ? 'No se encontraron items con los filtros aplicados'
-                            : 'Crea tu primer item de cobro para comenzar'}
-                    </p>
-                </div>
-            ) : (() => {
-                const groupedItems = groupItems(items);
-                return groupedItems.length === 0 ? (
-                    <div className="card-glass p-12 text-center">
-                        <span className="text-6xl mb-4 block">📋</span>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No hay items de cobro</h3>
-                        <p className="text-gray-600">
-                            {filters.search || filters.tipo || filters.anio
-                                ? 'No se encontraron items con los filtros aplicados'
-                                : 'Crea tu primer item de cobro para comenzar'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4">
-                        {groupedItems.map((item, index) => (
-                            <div key={item.isGroup ? `group-${item.id}` : item.id} className="card-glass overflow-hidden">
-                                {/* Main item card */}
-                                <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getTipoBadgeColor(item.tipo_item)}`}>
-                                                {getTipoLabel(item.tipo_item)}
-                                            </span>
-                                            {item.seccion && (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
-                                                    🏕️ {item.seccion}
-                                                </span>
-                                            )}
-                                            {!item.seccion && (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
-                                                    🌍 Todos
-                                                </span>
-                                            )}
-                                            {item.isGroup && (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800">
-                                                    📅 {item.groupedItems.length} meses
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h3 className="text-lg font-bold text-gray-900">{item.descripcion}</h3>
-                                        <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                                            <div>
-                                                <span className="font-medium">Monto:</span> ${item.monto.toLocaleString('es-CL')}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium">Año:</span> {item.anio}
-                                            </div>
-                                            {item.isGroup ? (
-                                                <div>
-                                                    <span className="font-medium">Meses:</span> {item.monthRange}
-                                                </div>
-                                            ) : item.mes && (
-                                                <div>
-                                                    <span className="font-medium">Mes:</span> {getMonthName(item.mes)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {item.isGroup && (
-                                            <div className="mt-3 text-xs text-gray-500">
-                                                <span className="font-medium">Total grupo:</span> ${(item.monto * item.groupedItems.length).toLocaleString('es-CL')}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        {item.isGroup && (
-                                            <button
-                                                onClick={() => toggleGroup(item.id)}
-                                                className="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                title={expandedGroups.has(item.id) ? "Colapsar" : "Expandir para editar"}
-                                            >
-                                                {expandedGroups.has(item.id) ? '🔼 Colapsar' : '🔽 Ver meses'}
-                                            </button>
-                                        )}
-                                        {!item.isGroup && hasPermission('editar_items_cobro') && (
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title="Editar"
-                                            >
-                                                ✏️
-                                            </button>
-                                        )}
-                                        {!item.isGroup && hasPermission('eliminar_items_cobro') && (
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Eliminar"
-                                            >
-                                                🗑️
-                                            </button>
-                                        )}
-                                        {item.isGroup && hasPermission('eliminar_items_cobro') && (
-                                            <button
-                                                onClick={() => handleDeleteGroup(item.groupedItems)}
-                                                className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Eliminar grupo completo"
-                                            >
-                                                🗑️ Eliminar todos
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Expanded individual items */}
-                                {item.isGroup && expandedGroups.has(item.id) && (
-                                    <div className="border-t border-gray-200 bg-gray-50 p-4">
-                                        <p className="text-sm font-medium text-gray-700 mb-3">Items individuales:</p>
-                                        <div className="space-y-2">
-                                            {item.groupedItems.map(individualItem => (
-                                                <div key={individualItem.id} className="bg-white p-3 rounded-lg flex justify-between items-center">
-                                                    <div className="text-sm">
-                                                        <span className="font-medium text-gray-900">{getMonthName(individualItem.mes)}</span>
-                                                        <span className="text-gray-500 ml-2">- ${individualItem.monto.toLocaleString('es-CL')}</span>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        {hasPermission('editar_items_cobro') && (
-                                                            <button
-                                                                onClick={() => handleEdit(individualItem)}
-                                                                className="px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm"
-                                                                title="Editar"
-                                                            >
-                                                                ✏️ Editar
-                                                            </button>
-                                                        )}
-                                                        {hasPermission('eliminar_items_cobro') && (
-                                                            <button
-                                                                onClick={() => handleDelete(individualItem.id)}
-                                                                className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-sm"
-                                                                title="Eliminar"
-                                                            >
-                                                                🗑️
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                );
-            })()}
+            {renderContent()}
 
             {/* Resumen */}
-            {items.length > 0 && (
+            {items.length > 0 && !loading && (
                 <div className="card-glass p-4 bg-gray-50">
                     <p className="text-sm text-gray-600">
                         Mostrando <span className="font-bold">{items.length}</span> item(s) de cobro
