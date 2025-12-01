@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { supabase } from '../../supabase/client';
 
 // Opciones de meses para cuotas mensuales
@@ -73,7 +74,7 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
         if (formData.tipo_item === 'cuota_mensual') {
             const itemsToInsert = formData.meses.map((m) => ({
                 ...baseData,
-                mes: parseInt(m),
+                mes: parseInt(m, 10),
                 created_by: creatorId
             }));
             const { error } = await supabase.from('items_pago').insert(itemsToInsert);
@@ -92,7 +93,7 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
     const updateItem = async (baseData) => {
         const dataToUpdate = {
             ...baseData,
-            mes: formData.tipo_item === 'cuota_mensual' ? parseInt(formData.meses[0] || 0) : null,
+            mes: formData.tipo_item === 'cuota_mensual' ? parseInt(formData.meses[0] || 0, 10) : null,
         };
         const { error } = await supabase.from('items_pago').update(dataToUpdate).eq('id', item.id);
         if (error) throw error;
@@ -112,7 +113,7 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
             tipo_item: formData.tipo_item,
             descripcion: formData.descripcion.trim(),
             monto: parseFloat(formData.monto),
-            anio: parseInt(formData.anio),
+            anio: parseInt(formData.anio, 10),
             seccion: formData.seccion || null,
         };
 
@@ -146,10 +147,11 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Tipo de Item */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="tipo_item" className="block text-sm font-medium text-gray-700 mb-1">
                     Tipo de Item <span className="text-red-500">*</span>
                 </label>
                 <select
+                    id="tipo_item"
                     name="tipo_item"
                     value={formData.tipo_item}
                     onChange={handleChange}
@@ -166,10 +168,11 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Descripción */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">
                     Descripción <span className="text-red-500">*</span>
                 </label>
                 <input
+                    id="descripcion"
                     type="text"
                     name="descripcion"
                     value={formData.descripcion}
@@ -182,10 +185,11 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Monto */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
                     Monto (CLP) <span className="text-red-500">*</span>
                 </label>
                 <input
+                    id="monto"
                     type="number"
                     name="monto"
                     value={formData.monto}
@@ -200,10 +204,11 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Año */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="anio" className="block text-sm font-medium text-gray-700 mb-1">
                     Año <span className="text-red-500">*</span>
                 </label>
                 <select
+                    id="anio"
                     name="anio"
                     value={formData.anio}
                     onChange={handleChange}
@@ -224,8 +229,9 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                         {MONTH_OPTIONS.map((m) => (
-                            <label key={m.id} className="inline-flex items-center">
+                            <label key={m.id} htmlFor={`mes-${m.id}`} className="inline-flex items-center">
                                 <input
+                                    id={`mes-${m.id}`}
                                     type="checkbox"
                                     checked={formData.meses.includes(m.id)}
                                     onChange={() => toggleMonth(m.id)}
@@ -240,8 +246,9 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
 
             {/* Sección */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Aplicar a</label>
+                <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Aplicar a</label>
                 <select
+                    id="seccion"
                     name="seccion"
                     value={formData.seccion}
                     onChange={handleChange}
@@ -278,6 +285,20 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
             </div>
         </form>
     );
+};
+
+ItemCobroForm.propTypes = {
+    item: PropTypes.shape({
+        id: PropTypes.number,
+        tipo_item: PropTypes.string,
+        descripcion: PropTypes.string,
+        monto: PropTypes.number,
+        anio: PropTypes.number,
+        mes: PropTypes.number,
+        seccion: PropTypes.string,
+    }),
+    onSuccess: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
 };
 
 export default ItemCobroForm;

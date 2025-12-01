@@ -1,5 +1,6 @@
 // src/components/PasswordInput.jsx
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 
 export default function PasswordInput({
     id,
@@ -56,3 +57,15 @@ export default function PasswordInput({
         </div>
     );
 }
+
+PasswordInput.propTypes = {
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    placeholder: PropTypes.string,
+    label: PropTypes.string,
+    className: PropTypes.string,
+    required: PropTypes.bool,
+    autoComplete: PropTypes.string,
+};
