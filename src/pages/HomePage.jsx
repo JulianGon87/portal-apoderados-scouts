@@ -229,7 +229,9 @@ export default function HomePage() {
     setProfileError('');
     setProfileSuccess(false);
 
-    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) {
+    // Validación de email más segura y simple para evitar ReDoS
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (profileForm.email && !emailRegex.test(profileForm.email)) {
       setProfileError('Por favor ingresa un email válido');
       return;
     }
