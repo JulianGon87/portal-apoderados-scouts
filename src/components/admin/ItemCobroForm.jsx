@@ -22,7 +22,7 @@ const MONTH_OPTIONS = [
  * Formulario para crear/editar items de cobro.
  * Para "cuota_mensual" permite seleccionar varios meses y crea un registro por cada mes.
  */
-const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
+const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
     const [formData, setFormData] = useState({
         tipo_item: item?.tipo_item || 'cuota_mensual',
         descripcion: item?.descripcion || '',
@@ -145,28 +145,48 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
                 </div>
             )}
 
-            {/* Tipo de Item */}
-            <div>
-                <label htmlFor="tipo_item" className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo de Item <span className="text-red-500">*</span>
-                </label>
-                <select
-                    id="tipo_item"
-                    name="tipo_item"
-                    value={formData.tipo_item}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                >
-                    <option value="cuota_mensual">Cuota Mensual</option>
-                    <option value="rifa">Rifa</option>
-                    <option value="evento">Evento</option>
-                    <option value="campamento">Campamento</option>
-                    <option value="parche">Parche</option>
-                </select>
+            {/* Fila 1: Tipo y Año */}
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="tipo_item" className="block text-sm font-medium text-gray-700 mb-1">
+                        Tipo <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="tipo_item"
+                        name="tipo_item"
+                        value={formData.tipo_item}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                    >
+                        <option value="cuota_mensual">Cuota Mensual</option>
+                        <option value="rifa">Rifa</option>
+                        <option value="evento">Evento</option>
+                        <option value="campamento">Campamento</option>
+                        <option value="parche">Parche</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label htmlFor="anio" className="block text-sm font-medium text-gray-700 mb-1">
+                        Año <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="anio"
+                        name="anio"
+                        value={formData.anio}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                    >
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
             </div>
 
-            {/* Descripción */}
+            {/* Fila 2: Descripción */}
             <div>
                 <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">
                     Descripción <span className="text-red-500">*</span>
@@ -183,87 +203,69 @@ const ItemCobroForm = ({ item, onSuccess, onCancel }) => {
                 />
             </div>
 
-            {/* Monto */}
-            <div>
-                <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
-                    Monto (CLP) <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="monto"
-                    type="number"
-                    name="monto"
-                    value={formData.monto}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    step="1"
-                    placeholder="5000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                />
-            </div>
+            {/* Fila 3: Monto y Sección */}
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
+                        Monto <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                        <span className="absolute left-3 top-2 text-gray-500">$</span>
+                        <input
+                            id="monto"
+                            type="number"
+                            name="monto"
+                            value={formData.monto}
+                            onChange={handleChange}
+                            required
+                            min="1"
+                            step="1"
+                            placeholder="5000"
+                            className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                        />
+                    </div>
+                </div>
 
-            {/* Año */}
-            <div>
-                <label htmlFor="anio" className="block text-sm font-medium text-gray-700 mb-1">
-                    Año <span className="text-red-500">*</span>
-                </label>
-                <select
-                    id="anio"
-                    name="anio"
-                    value={formData.anio}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                >
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                </select>
+                <div>
+                    <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
+                    <select
+                        id="seccion"
+                        name="seccion"
+                        value={formData.seccion}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                    >
+                        <option value="">Todas</option>
+                        <option value="manada">Manada</option>
+                        <option value="tropa">Tropa</option>
+                        <option value="compañia">Compañía</option>
+                        <option value="comunidad">Comunidad</option>
+                    </select>
+                </div>
             </div>
 
             {/* Meses (solo para cuota mensual) */}
             {formData.tipo_item === 'cuota_mensual' && (
-                <fieldset>
-                    <legend className="block text-sm font-medium text-gray-700 mb-1">
-                        Meses <span className="text-red-500">*</span>
+                <fieldset className="border border-gray-200 rounded-lg p-3">
+                    <legend className="text-sm font-medium text-gray-700 px-2">
+                        Meses a generar
                     </legend>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-rows-3 grid-flow-col gap-x-4 gap-y-1 mt-1">
                         {MONTH_OPTIONS.map((m) => (
-                            <label key={m.id} htmlFor={`mes-${m.id}`} className="inline-flex items-center">
+                            <label key={m.id} htmlFor={`mes-${m.id}`} className="inline-flex items-center hover:bg-gray-50 rounded px-1 cursor-pointer">
                                 <input
                                     id={`mes-${m.id}`}
                                     type="checkbox"
                                     checked={formData.meses.includes(m.id)}
                                     onChange={() => toggleMonth(m.id)}
-                                    className="form-checkbox h-4 w-4 text-scout-blue"
+                                    className="form-checkbox h-4 w-4 text-scout-blue rounded border-gray-300"
                                 />
-                                <span className="ml-2 text-sm">{m.name}</span>
+                                <span className="ml-2 text-sm text-gray-700">{m.name}</span>
                             </label>
                         ))}
                     </div>
                 </fieldset>
             )}
-
-            {/* Sección */}
-            <div>
-                <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Aplicar a</label>
-                <select
-                    id="seccion"
-                    name="seccion"
-                    value={formData.seccion}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                >
-                    <option value="">Todas las secciones</option>
-                    <option value="manada">Manada</option>
-                    <option value="tropa">Tropa</option>
-                    <option value="compañia">Compañía</option>
-                    <option value="comunidad">Comunidad</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                    Selecciona una sección específica o deja en "Todas las secciones"
-                </p>
-            </div>
 
             {/* Botones */}
             <div className="flex gap-3 pt-4">
@@ -301,8 +303,6 @@ ItemCobroForm.propTypes = {
     onCancel: PropTypes.func.isRequired,
 };
 
-ItemCobroForm.defaultProps = {
-    item: null,
-};
+
 
 export default ItemCobroForm;

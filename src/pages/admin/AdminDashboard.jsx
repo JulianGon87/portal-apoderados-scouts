@@ -7,16 +7,25 @@ import { supabase } from '../../supabase/client';
 /**
  * Helper para obtener estadísticas básicas
  */
-const fetchBasicStats = async (currentYear, currentMonth) => {
+const fetchBasicStats = async () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
+
+    // Fechas clave
+    const startCurrent = new Date(currentYear, currentMonth, 1).toISOString();
+    const startNext = new Date(currentYear, currentMonth + 1, 1).toISOString();
+
     // 1. Total recaudado del mes actual
-    const { data: pagosData, error: pagosError } = await supabase
+    const { data: currentData, error: currentError } = await supabase
         .from('pagos')
         .select('monto')
         .eq('estado', 'PAGADO')
-        .gte('fecha_pago', `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`);
+        .gte('fecha_pago', startCurrent)
+        .lt('fecha_pago', startNext);
 
-    if (pagosError) throw pagosError;
-    const totalRecaudado = pagosData?.reduce((sum, pago) => sum + (pago.monto || 0), 0) || 0;
+    if (currentError) throw currentError;
+    const totalRecaudado = currentData?.reduce((sum, pago) => sum + (pago.monto || 0), 0) || 0;
 
     // 2. Tickets pendientes
     const { count: ticketsPendientes, error: ticketsError } = await supabase
@@ -160,10 +169,9 @@ const AdminDashboard = () => {
             try {
                 setLoading(true);
                 const currentYear = new Date().getFullYear();
-                const currentMonth = new Date().getMonth() + 1;
 
                 const [basicStats, deudaTotal, activity] = await Promise.all([
-                    fetchBasicStats(currentYear, currentMonth),
+                    fetchBasicStats(),
                     calculateDebt(currentYear),
                     fetchActivity()
                 ]);
@@ -225,7 +233,6 @@ const AdminDashboard = () => {
                     icon="💵"
                     color="green"
                     subtitle={`${new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}`}
-                    trend={{ value: '+12%', label: 'vs mes anterior', isPositive: true }}
                 />
 
                 <StatsCard

@@ -291,23 +291,46 @@ export default function StudentProfilePage() {
                                                 <div key={month.monthId} className="p-4 rounded-xl border bg-white shadow-sm">
                                                     <h3 className="font-bold text-lg mb-2 text-gray-800">{month.monthName}</h3>
                                                     <ul className="space-y-2">
-                                                        {month.items.map((item) => (
-                                                            <li
-                                                                key={item.id}
-                                                                className={`flex justify-between items-center p-2 rounded ${item.isPaid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`w-2 h-2 rounded-full ${item.isPaid ? 'bg-green-600' : 'bg-red-600'}`} />
-                                                                    <span className="font-medium text-gray-800 text-sm">{item.descripcion}</span>
-                                                                </div>
-                                                                <div className="text-right">
-                                                                    <span className="font-bold text-sm">${item.monto.toLocaleString('es-CL')}</span>
-                                                                    <span className={`ml-2 text-xs font-semibold ${item.isPaid ? 'text-green-600' : 'text-red-600'}`}>
-                                                                        {item.isPaid ? 'Pagado' : 'Pendiente'}
-                                                                    </span>
-                                                                </div>
-                                                            </li>
-                                                        ))}
+                                                        {month.items.map((item) => {
+                                                            // Buscar si existe un ticket rechazado para este ítem
+                                                            const rejectedTicket = tickets.find(t =>
+                                                                t.item_id === item.id && t.estado === 'rechazado'
+                                                            );
+
+                                                            return (
+                                                                <li
+                                                                    key={item.id}
+                                                                    className={`flex flex-col p-2 rounded border ${item.isPaid ? 'bg-green-50 border-green-200' :
+                                                                            rejectedTicket ? 'bg-red-50 border-red-200' :
+                                                                                'bg-gray-50 border-gray-200'
+                                                                        }`}
+                                                                >
+                                                                    <div className="flex justify-between items-center w-full">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`w-2 h-2 rounded-full ${item.isPaid ? 'bg-green-600' :
+                                                                                    rejectedTicket ? 'bg-red-600' :
+                                                                                        'bg-gray-400'
+                                                                                }`} />
+                                                                            <span className="font-medium text-gray-800 text-sm">{item.descripcion}</span>
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <span className="font-bold text-sm">${item.monto.toLocaleString('es-CL')}</span>
+                                                                            <span className={`ml-2 text-xs font-semibold ${item.isPaid ? 'text-green-600' :
+                                                                                    rejectedTicket ? 'text-red-600' :
+                                                                                        'text-gray-500'
+                                                                                }`}>
+                                                                                {item.isPaid ? 'Pagado' : rejectedTicket ? 'RECHAZADO' : 'Pendiente'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    {rejectedTicket && rejectedTicket.comentario_admin && (
+                                                                        <div className="mt-2 text-xs text-red-700 bg-red-100/50 p-1.5 rounded border border-red-100">
+                                                                            <span className="font-bold">Motivo:</span> {rejectedTicket.comentario_admin}
+                                                                        </div>
+                                                                    )}
+                                                                </li>
+                                                            );
+                                                        })}
                                                     </ul>
                                                 </div>
                                             ))}
@@ -323,31 +346,51 @@ export default function StudentProfilePage() {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-4">
-                                                {paymentGroups.otros.map((pago) => (
-                                                    <div key={pago.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex justify-between items-center">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
-                                                                {pago.tipo_item === 'campamento' ? '⛺' :
-                                                                    pago.tipo_item === 'evento' ? '🎉' :
-                                                                        pago.tipo_item === 'rifa' ? '🎟️' : '🏷️'}
+                                                {paymentGroups.otros.map((pago) => {
+                                                    // Buscar si existe un ticket rechazado para este ítem
+                                                    const rejectedTicket = tickets.find(t =>
+                                                        t.item_id === pago.id && t.estado === 'rechazado'
+                                                    );
+
+                                                    return (
+                                                        <div key={pago.id} className={`bg-white p-5 rounded-xl border hover:shadow-md transition-shadow flex flex-col gap-3 ${rejectedTicket ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
+                                                            }`}>
+                                                            <div className="flex justify-between items-center w-full">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${rejectedTicket ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
+                                                                        }`}>
+                                                                        {pago.tipo_item === 'campamento' ? '⛺' :
+                                                                            pago.tipo_item === 'evento' ? '🎉' :
+                                                                                pago.tipo_item === 'rifa' ? '🎟️' : '🏷️'}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-gray-800 text-lg capitalize">
+                                                                            {pago.tipo_item.replace('_', ' ')}
+                                                                        </h4>
+                                                                        <p className="text-gray-600">{pago.descripcion}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-xl font-bold text-gray-800">
+                                                                        ${pago.monto.toLocaleString('es-CL')}
+                                                                    </p>
+                                                                    <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' :
+                                                                            rejectedTicket ? 'bg-red-100 text-red-700' :
+                                                                                'bg-gray-100 text-gray-700'
+                                                                        }`}>
+                                                                        {pago.isPaid ? 'PAGADO' : rejectedTicket ? 'RECHAZADO' : 'PENDIENTE'}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <h4 className="font-bold text-gray-800 text-lg capitalize">
-                                                                    {pago.tipo_item.replace('_', ' ')}
-                                                                </h4>
-                                                                <p className="text-gray-600">{pago.descripcion}</p>
-                                                            </div>
+                                                            {rejectedTicket && rejectedTicket.comentario_admin && (
+                                                                <div className="w-full bg-red-50 p-3 rounded-lg text-sm text-red-700 border border-red-100">
+                                                                    <span className="font-bold block text-xs uppercase mb-1">Motivo del rechazo:</span>
+                                                                    {rejectedTicket.comentario_admin}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div className="text-right">
-                                                            <p className="text-xl font-bold text-gray-800">
-                                                                ${pago.monto.toLocaleString('es-CL')}
-                                                            </p>
-                                                            <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                                {pago.isPaid ? 'PAGADO' : 'PENDIENTE'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

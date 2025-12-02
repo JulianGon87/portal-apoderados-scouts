@@ -1,57 +1,117 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabase/client';
 
-const AccessDenied = () => {
+export default function AccessDenied() {
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const log = (msg, type = 'info') => {
+        setLogs(prev => [...prev, { msg, type, time: new Date().toLocaleTimeString() }]);
+    };
+
+    useEffect(() => {
+        runDiagnostics();
+    }, []);
+
+    const runDiagnostics = async () => {
+        try {
+            log('INICIANDO DIAGNÓSTICO DE BASE DE DATOS...', 'warning');
+
+            // 1. Verificar Usuario Actual
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                log('❌ No hay usuario autenticado en Supabase Auth.', 'error');
+                return;
+            }
+            log(`✅ Usuario Autenticado: ${user.email} (ID Auth: ${user.id})`, 'success');
+
+            // 2. Buscar este usuario en tabla 'users'
+            const { data: userRecord, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', user.email)
+                .single();
+
+            if (userError) {
+                log(`❌ Error buscando usuario en tabla 'users': ${userError.message}`, 'error');
+                log('HINT: Si RLS está desactivado, esto no debería fallar.', 'info');
+            } else if (!userRecord) {
+                log('⚠️ El usuario autenticado NO tiene registro en la tabla pública "users".', 'warning');
+            } else {
+                log(`✅ Usuario encontrado en tabla 'users'. ID: ${userRecord.id}`, 'success');
+                log(`   RUT: ${userRecord.rut} | Nombre: ${userRecord.nombre} ${userRecord.apellidos}`, 'info');
+            }
+
+            // 3. Analizar Alumnos
+            log('--- ANALIZANDO ALUMNOS ---', 'warning');
+            const { data: alumnos, error: alumnosError } = await supabase
+                .from('alumnos')
+                .select('*')
+                .limit(10); // Analizamos los primeros 10
+
+            if (alumnosError) {
+                log(`❌ Error leyendo alumnos: ${alumnosError.message}`, 'error');
+            } else {
+                log(`Se leyeron ${alumnos.length} alumnos de muestra.`, 'info');
+
+                for (const alumno of alumnos) {
+                    const apoderadoId = alumno.apoderado_id;
+                    let status = '';
+
+                    if (!apoderadoId) {
+                        status = '🔴 NULL (Sin ID)';
+                    } else {
+                        // Intentar buscar este ID específico en users
+                        const { data: apoderado, error: apodError } = await supabase
+                            .from('users')
+                            .select('id, nombre')
+                            .eq('id', apoderadoId)
+                            .maybeSingle();
+
+                        if (apodError) {
+                            status = `❌ Error DB: ${apodError.message}`;
+                        } else if (apoderado) {
+                            status = `🟢 OK (Encontrado: ${apoderado.nombre})`;
+                        } else {
+                            status = `⚠️ ID HUÉRFANO (El ID existe en alumno, pero NO en users)`;
+                        }
+                    }
+
+                    log(`Alumno: ${alumno.nombre} ${alumno.apellidos_alumno} | Apoderado_ID: ${apoderadoId} -> ${status}`, status.includes('OK') ? 'success' : 'error');
+                }
+            }
+
+            // 4. Prueba de Permisos Generales
+            log('--- PRUEBA DE PERMISOS (users) ---', 'warning');
+            const { count, error: countError } = await supabase
+                .from('users')
+                .select('*', { count: 'exact', head: true });
+
+            if (countError) {
+                log(`❌ Fallo al contar usuarios: ${countError.message}`, 'error');
+            } else {
+                log(`✅ Acceso OK a tabla users. Total registros: ${count}`, 'success');
+            }
+
+        } catch (e) {
+            log(`CRITICAL ERROR: ${e.message}`, 'error');
+        } finally {
+            setLoading(false);
+            log('DIAGNÓSTICO FINALIZADO', 'warning');
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-            <div className="max-w-md w-full text-center">
-                <div className="mb-8">
-                    <div className="mx-auto h-24 w-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                        <svg
-                            className="h-12 w-12 text-red-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                        </svg>
+        <div className="min-h-screen bg-black text-green-400 p-8 font-mono text-sm overflow-auto">
+            <h1 className="text-2xl mb-4 border-b border-green-600 pb-2">SYSTEM DIAGNOSTIC TOOL v1.0</h1>
+            <div className="space-y-1">
+                {logs.map((l, i) => (
+                    <div key={i} className={`${l.type === 'error' ? 'text-red-500 font-bold' : l.type === 'warning' ? 'text-yellow-400' : l.type === 'success' ? 'text-green-300' : 'text-gray-300'}`}>
+                        <span className="opacity-50">[{l.time}]</span> {l.msg}
                     </div>
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-                        Acceso Denegado
-                    </h1>
-                    <p className="text-gray-600 mb-8">
-                        Lo sentimos, no tienes los permisos necesarios para acceder a esta página.
-                        Si crees que esto es un error, por favor contacta al administrador.
-                    </p>
-                </div>
-
-                <div className="space-y-4">
-                    <Link
-                        to="/admin"
-                        className="block w-full px-4 py-3 bg-scout-blue text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
-                    >
-                        Volver al Dashboard
-                    </Link>
-                    <Link
-                        to="/"
-                        className="block w-full px-4 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                    >
-                        Ir al Inicio del Portal
-                    </Link>
-                </div>
-
-                <div className="mt-12 text-sm text-gray-400">
-                    <p>Código de error: 403 Forbidden</p>
-                </div>
+                ))}
+                {loading && <div className="animate-pulse mt-4">_ Procesando...</div>}
             </div>
         </div>
     );
-};
-
-export default AccessDenied;
+}

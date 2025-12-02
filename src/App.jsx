@@ -16,6 +16,7 @@ import AdminPagos from './pages/admin/AdminPagos';
 import AdminAlumnos from './pages/admin/AdminAlumnos';
 import AdminLogros from './pages/admin/AdminLogros';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
+import AccessDenied from './pages/AccessDenied'; // Importar AccessDenied
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route index element={<LoginPage />} />
           <Route path="home" element={<HomePage />} />
           <Route path="alumno/:slug" element={<StudentProfilePage />} />
+          <Route path="access-denied" element={<AccessDenied />} /> {/* Ruta de diagnóstico */}
           {/* Ruta 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

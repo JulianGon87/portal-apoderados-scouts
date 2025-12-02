@@ -149,9 +149,9 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2">
             <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-1">
                     <span className="block text-sm font-medium text-gray-700">
                         Selecciona las deudas a pagar
                     </span>
@@ -164,17 +164,17 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                     </button>
                 </div>
 
-                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg divide-y divide-gray-100 bg-gray-50">
+                <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg divide-y divide-gray-100 bg-gray-50">
                     {deudasPendientes.map(item => (
                         <label
                             key={item.id}
-                            className={`flex items-center p-3 hover:bg-blue-50 cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}
+                            className={`flex items-center p-2 hover:bg-blue-50 cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}
                         >
                             <input
                                 type="checkbox"
                                 checked={selectedIds.includes(item.id)}
                                 onChange={() => handleCheckboxChange(item.id)}
-                                className="w-5 h-5 text-scout-blue rounded border-gray-300 focus:ring-scout-blue"
+                                className="w-4 h-4 text-scout-blue rounded border-gray-300 focus:ring-scout-blue"
                             />
                             <div className="ml-3 flex-1">
                                 <div className="flex justify-between items-center">
@@ -202,34 +202,35 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                 </p>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <div className="flex justify-between items-center">
-                    <span className="text-blue-800 font-medium">Total a Pagar</span>
-                    <span className="text-2xl font-bold text-blue-900">
+            <div className="grid grid-cols-2 gap-3 items-center">
+                <div className="bg-blue-50 p-2 rounded-lg border border-blue-100 text-center">
+                    <span className="block text-blue-800 text-[10px] font-bold uppercase tracking-wide">Total a Pagar</span>
+                    <span className="block text-lg font-bold text-blue-900">
                         ${totalMonto.toLocaleString('es-CL')}
                     </span>
+                </div>
+
+                <div>
+                    <label htmlFor="fecha_pago" className="block text-xs font-medium text-gray-700 mb-1">
+                        Fecha Transferencia
+                    </label>
+                    <input
+                        id="fecha_pago"
+                        type="date"
+                        value={formData.fecha_pago}
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setFormData({ ...formData, fecha_pago: e.target.value })}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                        required
+                    />
                 </div>
             </div>
 
             <div>
-                <label htmlFor="fecha_pago" className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha de Transferencia
-                </label>
-                <input
-                    id="fecha_pago"
-                    type="date"
-                    value={formData.fecha_pago}
-                    onChange={(e) => setFormData({ ...formData, fecha_pago: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
-                    required
-                />
-            </div>
-
-            <div>
-                <label htmlFor="comprobante" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="comprobante" className="block text-xs font-medium text-gray-700 mb-1">
                     Comprobante (Imagen o PDF)
                 </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
+                <div className="mt-1 flex justify-center px-4 py-2 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
                     <input
                         id="comprobante"
                         type="file"
@@ -238,35 +239,35 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                         accept="image/*,.pdf"
                         required
                     />
-                    <div className="space-y-1 text-center">
-                        <span className="text-4xl">📎</span>
-                        <div className="flex text-sm text-gray-600 justify-center">
-                            <span className="font-medium text-scout-blue">
+                    <div className="space-y-0.5 text-center">
+                        <span className="text-xl">📎</span>
+                        <div className="flex text-xs text-gray-600 justify-center">
+                            <span className="font-medium text-scout-blue truncate max-w-[200px]">
                                 {file ? file.name : 'Sube un archivo'}
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, PDF hasta 5MB</p>
+                        <p className="text-[10px] text-gray-500">PNG, JPG, PDF hasta 5MB</p>
                     </div>
                 </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     disabled={loading}
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                    className="flex-1 px-3 py-2 text-sm bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
                     disabled={loading || selectedIds.length === 0}
                 >
                     {loading ? (
                         <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             Enviando...
                         </>
                     ) : (
