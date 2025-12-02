@@ -120,26 +120,21 @@ export default function StudentProfilePage() {
 
     return (
         <div className="min-h-full bg-gray-50 pb-12">
-            {/* Header / Portada */}
-            <div className="bg-gradient-to-r from-scout-green to-scout-blue text-white pb-12 pt-8 px-4 shadow-lg">
-                <div className="max-w-4xl mx-auto">
-                    <button
-                        onClick={() => navigate('/home')}
-                        className="mb-6 flex items-center gap-2 text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all font-medium backdrop-blur-sm border border-white/10 shadow-sm"
-                    >
-                        ← Volver al Inicio
-                    </button>
+            {/* Header / Portada Compacto */}
+            <div className="bg-gradient-to-r from-scout-green to-scout-blue text-white pb-10 pt-6 px-4 shadow-lg">
+                <div className="max-w-5xl mx-auto">
+                    <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
 
-                    <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 pb-4">
-                        <div className="relative group">
-                            <div className="w-40 h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-6xl border-4 border-white/30 shadow-xl overflow-hidden transition-all duration-300">
+                        {/* Columna 1: Avatar */}
+                        <div className="relative group flex-shrink-0">
+                            <div className="w-32 h-32 md:w-40 md:h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-6xl md:text-7xl border-4 border-white/30 shadow-xl overflow-hidden transition-all duration-300">
                                 {alumno.foto_url ? (
                                     <img src={alumno.foto_url} alt="Foto de perfil" className="w-full h-full object-cover" />
                                 ) : (
                                     '👦'
                                 )}
                             </div>
-                            <label className="absolute bottom-2 right-2 bg-white text-scout-blue p-2.5 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors" title="Cambiar foto">
+                            <label className="absolute bottom-2 right-2 bg-white text-scout-blue p-2 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors transform hover:scale-110" title="Cambiar foto">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -186,51 +181,67 @@ export default function StudentProfilePage() {
                                 />
                             </label>
                         </div>
-                        <div className="text-center md:text-left flex-grow w-full md:w-auto mt-4 md:mt-0">
-                            <h1 className="text-xl md:text-3xl font-bold font-display leading-tight break-words">{alumno.nombre} {alumno.apellidos_alumno}</h1>
-                            <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2 text-white/90">
-                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm backdrop-blur-sm" title="Sección">
-                                    🏕️ <span className="opacity-75 mr-1">Sección:</span> {alumno.seccion || 'Sin Sección'}
+
+                        {/* Columna 2: Información Personal */}
+                        <div className="flex-grow text-center md:text-left space-y-3">
+                            <div>
+                                <h1 className="text-2xl md:text-4xl font-bold font-display leading-tight tracking-tight">
+                                    {alumno.nombre} {alumno.apellidos_alumno}
+                                </h1>
+                                <p className="text-white/80 text-sm md:text-base font-medium mt-1">
+                                    Perfil del Alumno
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
+                                    🏕️ <span className="opacity-75">Sección:</span> {alumno.seccion || 'Sin Sección'}
                                 </span>
-                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm backdrop-blur-sm" title="RUT">
-                                    📋 <span className="opacity-75 mr-1">RUT:</span> {formatRut(alumno.rut_alumno)}
+                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
+                                    📋 <span className="opacity-75">RUT:</span> {formatRut(alumno.rut_alumno)}
                                 </span>
-                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm backdrop-blur-sm" title="Curso">
-                                    🎓 <span className="opacity-75 mr-1">Curso:</span> {alumno.curso}
+                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
+                                    🎓 <span className="opacity-75">Curso:</span> {alumno.curso}
                                 </span>
                             </div>
                         </div>
 
-                        {/* Estado General Badge + Botón Pagar */}
-                        <div className="flex flex-col gap-3 items-end">
-                            <div className={`px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg ${totalDebt === 0 ? 'bg-green-500/20 text-green-50' : 'bg-red-500/20 text-red-50'
+                        {/* Columna 3: Estado Financiero (Card Flotante) */}
+                        <div className="w-full md:w-auto flex flex-col gap-3 min-w-[200px]">
+                            <div className={`p-4 rounded-xl backdrop-blur-md border border-white/20 shadow-xl text-center transition-transform hover:scale-105 ${totalDebt === 0
+                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/30 text-white'
+                                : 'bg-gradient-to-br from-red-500/30 to-red-600/30 text-white'
                                 }`}>
-                                <p className="text-[10px] uppercase tracking-wider font-bold opacity-80">Estado Financiero</p>
-                                <p className="text-lg font-bold mt-0.5">
-                                    {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')} Deuda`}
+                                <p className="text-[10px] uppercase tracking-widest font-bold opacity-90 mb-1">Estado Financiero</p>
+                                <p className="text-xl md:text-2xl font-bold">
+                                    {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')}`}
                                 </p>
+                                {totalDebt > 0 && <p className="text-xs opacity-90 font-medium">Deuda Total</p>}
                             </div>
+
                             {pendingCount > 0 && (
                                 <button
                                     onClick={() => setShowTicketForm(true)}
-                                    className="bg-white text-scout-blue px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center gap-2"
+                                    className="w-full bg-white text-scout-blue px-4 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center justify-center gap-2 group"
                                 >
-                                    💸 Informar Pago
+                                    <span>💸</span>
+                                    <span className="group-hover:underline decoration-2 underline-offset-2">Informar Pago</span>
                                 </button>
                             )}
                         </div>
+
                     </div>
                 </div>
             </div>
 
             {/* Contenido Principal */}
-            <div className="max-w-4xl mx-auto px-4 -mt-8">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden min-h-[500px]">
+            <div className="max-w-4xl mx-auto px-2 md:px-4 -mt-6 md:-mt-8">
+                <div className="bg-white rounded-xl shadow-xl overflow-hidden min-h-[500px]">
 
                     {/* Tabs Principales */}
                     <div className="flex border-b border-gray-200">
                         <button
-                            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${activeTab === 'logros'
+                            className={`flex-1 py-3 text-center font-medium text-sm md:text-lg transition-colors ${activeTab === 'logros'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
@@ -239,57 +250,57 @@ export default function StudentProfilePage() {
                             🏆 Logros
                         </button>
                         <button
-                            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${activeTab === 'pagos'
+                            className={`flex-1 py-3 text-center font-medium text-sm md:text-lg transition-colors ${activeTab === 'pagos'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                             onClick={() => setActiveTab('pagos')}
                         >
-                            💰 Historial de Pagos
+                            💰 Historial
                         </button>
                     </div>
 
-                    <div className="p-6 md:p-8">
+                    <div className="p-4 md:p-8">
                         {activeTab === 'pagos' && (
                             <div className="animate-fade-in">
                                 {/* Sub-tabs para Pagos */}
-                                <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg w-full md:w-fit mx-auto md:mx-0 overflow-x-auto max-w-full no-scrollbar">
+                                <div className="grid grid-cols-3 gap-1 mb-4 md:mb-6 bg-gray-100 p-1 rounded-xl w-full md:w-fit mx-auto md:mx-0">
                                     <button
                                         onClick={() => setPaymentTab('mensual')}
-                                        className={`px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${paymentTab === 'mensual'
+                                        className={`py-2 px-1 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center ${paymentTab === 'mensual'
                                             ? 'bg-white text-scout-blue shadow-sm'
-                                            : 'text-gray-600 hover:text-gray-800'
+                                            : 'text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
-                                        Cuotas Mensuales
+                                        Cuotas
                                     </button>
                                     <button
                                         onClick={() => setPaymentTab('otros')}
-                                        className={`px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${paymentTab === 'otros'
+                                        className={`py-2 px-1 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center ${paymentTab === 'otros'
                                             ? 'bg-white text-scout-blue shadow-sm'
-                                            : 'text-gray-600 hover:text-gray-800'
+                                            : 'text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
                                         Otros Pagos
                                     </button>
                                     <button
                                         onClick={() => setPaymentTab('tickets')}
-                                        className={`px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${paymentTab === 'tickets'
+                                        className={`py-2 px-1 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center gap-1 ${paymentTab === 'tickets'
                                             ? 'bg-white text-scout-blue shadow-sm'
-                                            : 'text-gray-600 hover:text-gray-800'
+                                            : 'text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
-                                        Solicitudes ({tickets.filter(t => t.estado === 'pendiente').length})
+                                        Solicitudes
                                     </button>
                                 </div>
 
                                 {paymentTab === 'mensual' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                         {paymentGroups.mensual.details
                                             .filter(month => month.items && month.items.length > 0)
                                             .map((month) => (
-                                                <div key={month.monthId} className="p-4 rounded-xl border bg-white shadow-sm">
-                                                    <h3 className="font-bold text-lg mb-2 text-gray-800">{month.monthName}</h3>
+                                                <div key={month.monthId} className="p-3 md:p-4 rounded-xl border bg-white shadow-sm">
+                                                    <h3 className="font-bold text-base md:text-lg mb-2 text-gray-800">{month.monthName}</h3>
                                                     <ul className="space-y-2">
                                                         {month.items.map((item) => {
                                                             // Buscar si existe un ticket rechazado para este ítem
@@ -301,23 +312,23 @@ export default function StudentProfilePage() {
                                                                 <li
                                                                     key={item.id}
                                                                     className={`flex flex-col p-2 rounded border ${item.isPaid ? 'bg-green-50 border-green-200' :
-                                                                            rejectedTicket ? 'bg-red-50 border-red-200' :
-                                                                                'bg-gray-50 border-gray-200'
+                                                                        rejectedTicket ? 'bg-red-50 border-red-200' :
+                                                                            'bg-gray-50 border-gray-200'
                                                                         }`}
                                                                 >
                                                                     <div className="flex justify-between items-center w-full">
                                                                         <div className="flex items-center gap-2">
                                                                             <span className={`w-2 h-2 rounded-full ${item.isPaid ? 'bg-green-600' :
-                                                                                    rejectedTicket ? 'bg-red-600' :
-                                                                                        'bg-gray-400'
+                                                                                rejectedTicket ? 'bg-red-600' :
+                                                                                    'bg-gray-400'
                                                                                 }`} />
                                                                             <span className="font-medium text-gray-800 text-sm">{item.descripcion}</span>
                                                                         </div>
                                                                         <div className="text-right">
                                                                             <span className="font-bold text-sm">${item.monto.toLocaleString('es-CL')}</span>
-                                                                            <span className={`ml-2 text-xs font-semibold ${item.isPaid ? 'text-green-600' :
-                                                                                    rejectedTicket ? 'text-red-600' :
-                                                                                        'text-gray-500'
+                                                                            <span className={`ml-2 text-[10px] md:text-xs font-semibold ${item.isPaid ? 'text-green-600' :
+                                                                                rejectedTicket ? 'text-red-600' :
+                                                                                    'text-gray-500'
                                                                                 }`}>
                                                                                 {item.isPaid ? 'Pagado' : rejectedTicket ? 'RECHAZADO' : 'Pendiente'}
                                                                             </span>
@@ -338,14 +349,14 @@ export default function StudentProfilePage() {
                                 )}
 
                                 {paymentTab === 'otros' && (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3 md:space-y-4">
                                         {paymentGroups.otros.length === 0 ? (
                                             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                                                 <p className="text-4xl mb-2">📭</p>
                                                 <p className="text-gray-500 font-medium">No hay otros pagos registrados.</p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 gap-4">
+                                            <div className="grid grid-cols-1 gap-3 md:gap-4">
                                                 {paymentGroups.otros.map((pago) => {
                                                     // Buscar si existe un ticket rechazado para este ítem
                                                     const rejectedTicket = tickets.find(t =>
@@ -353,38 +364,43 @@ export default function StudentProfilePage() {
                                                     );
 
                                                     return (
-                                                        <div key={pago.id} className={`bg-white p-5 rounded-xl border hover:shadow-md transition-shadow flex flex-col gap-3 ${rejectedTicket ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
+                                                        <div key={pago.id} className={`bg-white p-3 md:p-5 rounded-xl border hover:shadow-md transition-shadow flex flex-col gap-2 md:gap-3 ${rejectedTicket ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
                                                             }`}>
                                                             <div className="flex justify-between items-center w-full">
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${rejectedTicket ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl md:text-2xl ${rejectedTicket ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
                                                                         }`}>
                                                                         {pago.tipo_item === 'campamento' ? '⛺' :
                                                                             pago.tipo_item === 'evento' ? '🎉' :
                                                                                 pago.tipo_item === 'rifa' ? '🎟️' : '🏷️'}
                                                                     </div>
                                                                     <div>
-                                                                        <h4 className="font-bold text-gray-800 text-lg capitalize">
+                                                                        <h4 className="font-bold text-gray-800 text-base md:text-lg capitalize leading-tight">
                                                                             {pago.tipo_item.replace('_', ' ')}
                                                                         </h4>
-                                                                        <p className="text-gray-600">{pago.descripcion}</p>
+                                                                        <p className="text-gray-600 text-xs md:text-sm">{pago.descripcion}</p>
+                                                                        {pago.fecha_limite && (
+                                                                            <p className="text-xs text-scout-blue font-medium mt-0.5 flex items-center gap-1">
+                                                                                📅 {new Date(pago.fecha_limite + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                                            </p>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <p className="text-xl font-bold text-gray-800">
+                                                                    <p className="text-base md:text-xl font-bold text-gray-800">
                                                                         ${pago.monto.toLocaleString('es-CL')}
                                                                     </p>
-                                                                    <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' :
-                                                                            rejectedTicket ? 'bg-red-100 text-red-700' :
-                                                                                'bg-gray-100 text-gray-700'
+                                                                    <span className={`inline-block text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' :
+                                                                        rejectedTicket ? 'bg-red-100 text-red-700' :
+                                                                            'bg-gray-100 text-gray-700'
                                                                         }`}>
                                                                         {pago.isPaid ? 'PAGADO' : rejectedTicket ? 'RECHAZADO' : 'PENDIENTE'}
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                             {rejectedTicket && rejectedTicket.comentario_admin && (
-                                                                <div className="w-full bg-red-50 p-3 rounded-lg text-sm text-red-700 border border-red-100">
-                                                                    <span className="font-bold block text-xs uppercase mb-1">Motivo del rechazo:</span>
+                                                                <div className="w-full bg-red-50 p-2 md:p-3 rounded-lg text-xs md:text-sm text-red-700 border border-red-100">
+                                                                    <span className="font-bold block text-[10px] uppercase mb-1">Motivo del rechazo:</span>
                                                                     {rejectedTicket.comentario_admin}
                                                                 </div>
                                                             )}
@@ -397,7 +413,7 @@ export default function StudentProfilePage() {
                                 )}
 
                                 {paymentTab === 'tickets' && (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3 md:space-y-4">
                                         {tickets.length === 0 ? (
                                             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                                                 <p className="text-4xl mb-2">🎫</p>
@@ -410,7 +426,7 @@ export default function StudentProfilePage() {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 gap-4">
+                                            <div className="grid grid-cols-1 gap-3 md:gap-4">
                                                 {Object.values(tickets.reduce((acc, ticket) => {
                                                     // Agrupar por URL del comprobante o por ID si no tiene (para mostrar individuales)
                                                     // Usamos una clave compuesta para mayor seguridad: URL + Fecha
@@ -453,31 +469,33 @@ export default function StudentProfilePage() {
                                                         return a.id - b.id; // Desempate estable
                                                     });
 
+                                                    const isRejected = group.estado === 'rechazado';
+
                                                     return (
-                                                        <div key={group.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                                                            <div className="flex justify-between items-start mb-3">
+                                                        <div key={group.id} className={`bg-white p-3 md:p-5 rounded-xl border hover:shadow-md transition-shadow ${isRejected ? 'border-red-300 bg-red-50/10' : 'border-gray-200'}`}>
+                                                            <div className="flex justify-between items-start mb-2 md:mb-3">
                                                                 <div>
-                                                                    <div className="flex flex-wrap gap-2 mb-2">
-                                                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(group.estado)}`}>
+                                                                    <div className="flex flex-wrap gap-2 mb-1 md:mb-2">
+                                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider ${getStatusColor(group.estado)}`}>
                                                                             {group.estado}
                                                                         </span>
                                                                         {group.items.length > 1 && (
-                                                                            <span className="inline-block px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold bg-blue-100 text-blue-800">
                                                                                 {group.items.length} ítems
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <h4 className="font-bold text-gray-800 text-lg">
+                                                                    <h4 className="font-bold text-gray-800 text-base md:text-lg">
                                                                         {group.items.length > 1 ? 'Pago Agrupado' : group.tipo_item.replace('_', ' ')}
                                                                     </h4>
                                                                 </div>
-                                                                <p className="text-xl font-bold text-gray-800">
+                                                                <p className="text-base md:text-xl font-bold text-gray-800">
                                                                     ${group.totalMonto.toLocaleString('es-CL')}
                                                                 </p>
                                                             </div>
 
                                                             {/* Lista de ítems del grupo */}
-                                                            <div className="mb-3 bg-gray-50 rounded-lg p-3 text-sm">
+                                                            <div className="mb-2 md:mb-3 bg-gray-50 rounded-lg p-2 md:p-3 text-xs md:text-sm">
                                                                 <ul className="space-y-1">
                                                                     {group.items.map((item, idx) => {
                                                                         // Determinar qué mostrar entre paréntesis
@@ -504,7 +522,7 @@ export default function StudentProfilePage() {
                                                                 </ul>
                                                             </div>
 
-                                                            <div className="text-sm text-gray-600 flex justify-between items-center pt-2 border-t border-gray-100">
+                                                            <div className="text-xs md:text-sm text-gray-600 flex justify-between items-center pt-2 border-t border-gray-100">
                                                                 <span>📅 {new Date(group.fecha_pago).toLocaleDateString('es-CL')}</span>
                                                                 {group.comprobante_url && (
                                                                     <a href={group.comprobante_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium">
@@ -513,10 +531,38 @@ export default function StudentProfilePage() {
                                                                 )}
                                                             </div>
 
-                                                            {group.comentario_admin && (
-                                                                <div className="mt-3 p-3 bg-red-50 rounded-lg text-sm text-red-700 border-l-4 border-red-300">
-                                                                    <span className="font-bold block text-xs uppercase mb-1">Observación Admin:</span>
-                                                                    {group.comentario_admin}
+                                                            {isRejected && (
+                                                                <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-lg">⚠️</span>
+                                                                        <div className="w-full">
+                                                                            <p className="text-red-800 font-bold text-sm">Solicitud Rechazada</p>
+                                                                            <div className="mt-1 space-y-1">
+                                                                                {group.items.filter(t => t.estado === 'rechazado').length > 0 ? (
+                                                                                    group.items.filter(t => t.estado === 'rechazado').map((ticket, idx) => {
+                                                                                        let itemName = ticket.tipo_item.replace('_', ' ');
+                                                                                        if (ticket.items_pago) {
+                                                                                            if (ticket.tipo_item === 'cuota_mensual' && ticket.items_pago.mes) {
+                                                                                                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                                                                                const mName = monthNames[ticket.items_pago.mes - 1];
+                                                                                                itemName = mName ? `Cuota ${mName}` : ticket.items_pago.descripcion;
+                                                                                            } else {
+                                                                                                itemName = ticket.items_pago.descripcion;
+                                                                                            }
+                                                                                        }
+                                                                                        return (
+                                                                                            <p key={idx} className="text-red-700 text-sm">
+                                                                                                <span className="font-semibold capitalize">• {itemName}:</span> {ticket.comentario_admin || 'Sin motivo especificado'}
+                                                                                            </p>
+                                                                                        );
+                                                                                    })
+                                                                                ) : (
+                                                                                    <p className="text-red-700 text-sm">{group.comentario_admin || 'No se especificó un motivo.'}</p>
+                                                                                )}
+                                                                            </div>
+                                                                            <p className="text-red-600/80 text-xs mt-2 font-medium">Por favor verifica los datos y envía una nueva solicitud.</p>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -542,16 +588,16 @@ export default function StudentProfilePage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                         {logros.map((logro) => (
-                                            <div key={logro.id} className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-lg transition-all flex items-start gap-4 group">
-                                                <div className="w-14 h-14 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">
+                                            <div key={logro.id} className="bg-white p-3 md:p-5 rounded-xl border border-gray-200 hover:shadow-lg transition-all flex items-start gap-3 md:gap-4 group">
+                                                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl md:text-3xl shadow-sm group-hover:scale-110 transition-transform">
                                                     {logro.icono || '🏅'}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-gray-800 text-lg">{logro.titulo}</h4>
-                                                    <p className="text-gray-600 text-sm mb-2">{logro.descripcion}</p>
-                                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                                                    <h4 className="font-bold text-gray-800 text-base md:text-lg">{logro.titulo}</h4>
+                                                    <p className="text-gray-600 text-xs md:text-sm mb-2">{logro.descripcion}</p>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] md:text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
                                                         📅 {new Date(logro.fecha_obtencion).toLocaleDateString('es-CL')}
                                                     </span>
                                                 </div>

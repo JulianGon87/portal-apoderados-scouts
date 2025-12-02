@@ -31,6 +31,7 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
         // Si el item ya tiene mes (edición) lo guardamos como un solo mes seleccionado
         meses: item?.mes ? [item.mes] : [],
         seccion: item?.seccion || '', // '' = todas
+        fecha_limite: item?.fecha_limite || '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -115,6 +116,7 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
             monto: parseFloat(formData.monto),
             anio: parseInt(formData.anio, 10),
             seccion: formData.seccion || null,
+            fecha_limite: formData.fecha_limite || null,
         };
 
         try {
@@ -145,8 +147,8 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
                 </div>
             )}
 
-            {/* Fila 1: Tipo y Año */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Fila 1: Tipo, Año y Fecha */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label htmlFor="tipo_item" className="block text-sm font-medium text-gray-700 mb-1">
                         Tipo <span className="text-red-500">*</span>
@@ -169,7 +171,7 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
 
                 <div>
                     <label htmlFor="anio" className="block text-sm font-medium text-gray-700 mb-1">
-                        Año <span className="text-red-500">*</span>
+                        Año de Cobro <span className="text-red-500">*</span>
                     </label>
                     <select
                         id="anio"
@@ -183,6 +185,22 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
                         <option value="2025">2025</option>
                         <option value="2026">2026</option>
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">Año fiscal del cobro</p>
+                </div>
+
+                <div>
+                    <label htmlFor="fecha_limite" className="block text-sm font-medium text-gray-700 mb-1">
+                        Fecha del Evento
+                    </label>
+                    <input
+                        id="fecha_limite"
+                        type="date"
+                        name="fecha_limite"
+                        value={formData.fecha_limite}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Opcional: Fecha real de la actividad</p>
                 </div>
             </div>
 
