@@ -15,12 +15,22 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
     const deudasPendientes = useMemo(() => {
         return items.filter(item => {
             // 1. Verificar si ya está pagado
-            const isPaid = pagos.some(p =>
-                p.estado === 'PAGADO' &&
-                p.anio === item.anio &&
-                (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
-                (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
-            );
+            // 1. Verificar si ya está pagado
+            const isPaid = pagos.some(p => {
+                if (p.estado !== 'PAGADO') return false;
+
+                // PRIORIDAD 1: Coincidencia exacta por ID (Lógica robusta)
+                if (p.item_id) {
+                    return p.item_id === item.id;
+                }
+
+                // PRIORIDAD 2: Compatibilidad con pagos antiguos (Legacy)
+                return (
+                    p.anio === item.anio &&
+                    (item.tipo_item === 'cuota_mensual' ? p.mes === item.mes : true) &&
+                    (p.tipo_item === item.tipo_item || (!p.tipo_item && item.tipo_item === 'cuota_mensual'))
+                );
+            });
 
             if (isPaid) return false;
 
@@ -39,7 +49,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
     }, [items, pagos, tickets]);
 
     const [formData, setFormData] = useState({
-        fecha_pago: new Date().toISOString().split('T')[0],
+        fecha_pago: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD en hora local
         comentario: ''
     });
     const [file, setFile] = useState(null);
@@ -218,7 +228,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                         id="fecha_pago"
                         type="date"
                         value={formData.fecha_pago}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={new Date().toLocaleDateString('en-CA')}
                         onChange={(e) => setFormData({ ...formData, fecha_pago: e.target.value })}
                         className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
                         required
