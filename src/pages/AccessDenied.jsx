@@ -13,85 +13,92 @@ export default function AccessDenied() {
         runDiagnostics();
     }, []);
 
+    const verifyAuthUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            log('❌ No hay usuario autenticado en Supabase Auth.', 'error');
+            return null;
+        }
+        log(`✅ Usuario Autenticado: ${user.email} (ID Auth: ${user.id})`, 'success');
+        return user;
+    };
+
+    const verifyUserRecord = async (user) => {
+        const { data: userRecord, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+
+        if (userError) {
+            log(`❌ Error buscando usuario en tabla 'users': ${userError.message}`, 'error');
+            log('HINT: Si RLS está desactivado, esto no debería fallar.', 'info');
+        } else if (!userRecord) {
+            log('⚠️ El usuario autenticado NO tiene registro en la tabla pública "users".', 'warning');
+        } else {
+            log(`✅ Usuario encontrado en tabla 'users'. ID: ${userRecord.id}`, 'success');
+            log(`   RUT: ${userRecord.rut} | Nombre: ${userRecord.nombre} ${userRecord.apellidos}`, 'info');
+        }
+    };
+
+    const checkStudentRelationship = async (alumno) => {
+        const apoderadoId = alumno.apoderado_id;
+        if (!apoderadoId) return '🔴 NULL (Sin ID)';
+
+        const { data: apoderado, error: apodError } = await supabase
+            .from('users')
+            .select('id, nombre')
+            .eq('id', apoderadoId)
+            .maybeSingle();
+
+        if (apodError) return `❌ Error DB: ${apodError.message}`;
+        if (apoderado) return `🟢 OK (Encontrado: ${apoderado.nombre})`;
+        return `⚠️ ID HUÉRFANO (El ID existe en alumno, pero NO en users)`;
+    };
+
+    const analyzeStudentsSample = async () => {
+        log('--- ANALIZANDO ALUMNOS ---', 'warning');
+        const { data: alumnos, error: alumnosError } = await supabase
+            .from('alumnos')
+            .select('*')
+            .limit(10);
+
+        if (alumnosError) {
+            log(`❌ Error leyendo alumnos: ${alumnosError.message}`, 'error');
+            return;
+        }
+
+        log(`Se leyeron ${alumnos.length} alumnos de muestra.`, 'info');
+
+        for (const alumno of alumnos) {
+            const status = await checkStudentRelationship(alumno);
+            log(`Alumno: ${alumno.nombre} ${alumno.apellidos_alumno} | Apoderado_ID: ${alumno.apoderado_id} -> ${status}`, status.includes('OK') ? 'success' : 'error');
+        }
+    };
+
+    const verifyTablePermissions = async () => {
+        log('--- PRUEBA DE PERMISOS (users) ---', 'warning');
+        const { count, error: countError } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true });
+
+        if (countError) {
+            log(`❌ Fallo al contar usuarios: ${countError.message}`, 'error');
+        } else {
+            log(`✅ Acceso OK a tabla users. Total registros: ${count}`, 'success');
+        }
+    };
+
     const runDiagnostics = async () => {
         try {
             log('INICIANDO DIAGNÓSTICO DE BASE DE DATOS...', 'warning');
 
-            // 1. Verificar Usuario Actual
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                log('❌ No hay usuario autenticado en Supabase Auth.', 'error');
-                return;
-            }
-            log(`✅ Usuario Autenticado: ${user.email} (ID Auth: ${user.id})`, 'success');
+            const user = await verifyAuthUser();
+            if (!user) return;
 
-            // 2. Buscar este usuario en tabla 'users'
-            const { data: userRecord, error: userError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('email', user.email)
-                .single();
-
-            if (userError) {
-                log(`❌ Error buscando usuario en tabla 'users': ${userError.message}`, 'error');
-                log('HINT: Si RLS está desactivado, esto no debería fallar.', 'info');
-            } else if (!userRecord) {
-                log('⚠️ El usuario autenticado NO tiene registro en la tabla pública "users".', 'warning');
-            } else {
-                log(`✅ Usuario encontrado en tabla 'users'. ID: ${userRecord.id}`, 'success');
-                log(`   RUT: ${userRecord.rut} | Nombre: ${userRecord.nombre} ${userRecord.apellidos}`, 'info');
-            }
-
-            // 3. Analizar Alumnos
-            log('--- ANALIZANDO ALUMNOS ---', 'warning');
-            const { data: alumnos, error: alumnosError } = await supabase
-                .from('alumnos')
-                .select('*')
-                .limit(10); // Analizamos los primeros 10
-
-            if (alumnosError) {
-                log(`❌ Error leyendo alumnos: ${alumnosError.message}`, 'error');
-            } else {
-                log(`Se leyeron ${alumnos.length} alumnos de muestra.`, 'info');
-
-                for (const alumno of alumnos) {
-                    const apoderadoId = alumno.apoderado_id;
-                    let status = '';
-
-                    if (!apoderadoId) {
-                        status = '🔴 NULL (Sin ID)';
-                    } else {
-                        // Intentar buscar este ID específico en users
-                        const { data: apoderado, error: apodError } = await supabase
-                            .from('users')
-                            .select('id, nombre')
-                            .eq('id', apoderadoId)
-                            .maybeSingle();
-
-                        if (apodError) {
-                            status = `❌ Error DB: ${apodError.message}`;
-                        } else if (apoderado) {
-                            status = `🟢 OK (Encontrado: ${apoderado.nombre})`;
-                        } else {
-                            status = `⚠️ ID HUÉRFANO (El ID existe en alumno, pero NO en users)`;
-                        }
-                    }
-
-                    log(`Alumno: ${alumno.nombre} ${alumno.apellidos_alumno} | Apoderado_ID: ${apoderadoId} -> ${status}`, status.includes('OK') ? 'success' : 'error');
-                }
-            }
-
-            // 4. Prueba de Permisos Generales
-            log('--- PRUEBA DE PERMISOS (users) ---', 'warning');
-            const { count, error: countError } = await supabase
-                .from('users')
-                .select('*', { count: 'exact', head: true });
-
-            if (countError) {
-                log(`❌ Fallo al contar usuarios: ${countError.message}`, 'error');
-            } else {
-                log(`✅ Acceso OK a tabla users. Total registros: ${count}`, 'success');
-            }
+            await verifyUserRecord(user);
+            await analyzeStudentsSample();
+            await verifyTablePermissions();
 
         } catch (e) {
             log(`CRITICAL ERROR: ${e.message}`, 'error');
