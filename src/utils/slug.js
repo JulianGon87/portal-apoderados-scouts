@@ -20,7 +20,7 @@ export function generateSlug(name) {
         .trim()
         .replace(/\s+/g, '-') // Replace spaces with hyphens
         .replace(/-+/g, '-') // Replace multiple hyphens with single
-        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+        .replace(/(^-)|(-$)/g, ''); // Remove leading/trailing hyphens
 }
 
 /**
