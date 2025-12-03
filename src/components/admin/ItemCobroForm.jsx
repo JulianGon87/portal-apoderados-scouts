@@ -28,9 +28,8 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
         descripcion: item?.descripcion || '',
         monto: item?.monto || '',
         anio: item?.anio || new Date().getFullYear(),
-        // Si el item ya tiene mes (edición) lo guardamos como un solo mes seleccionado
         meses: item?.mes ? [item.mes] : [],
-        seccion: item?.seccion || '', // '' = todas
+        seccion: item?.seccion || '',
         fecha_limite: item?.fecha_limite || '',
     });
     const [loading, setLoading] = useState(false);
@@ -71,33 +70,37 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
         return userData.id;
     };
 
-    const createItems = async (baseData, creatorId) => {
+    const prepareItemsToInsert = (baseData, creatorId) => {
         if (formData.tipo_item === 'cuota_mensual') {
-            const itemsToInsert = formData.meses.map((m) => ({
+            return formData.meses.map((m) => ({
                 ...baseData,
                 mes: parseInt(m, 10),
                 created_by: creatorId
             }));
-            const { error } = await supabase.from('items_pago').insert(itemsToInsert);
-            if (error) throw error;
-        } else {
-            const dataToInsert = {
-                ...baseData,
-                mes: null,
-                created_by: creatorId
-            };
-            const { error } = await supabase.from('items_pago').insert([dataToInsert]);
-            if (error) throw error;
         }
+        return [{
+            ...baseData,
+            mes: null,
+            created_by: creatorId
+        }];
     };
 
-    const updateItem = async (baseData) => {
+    const handleCreate = async (baseData) => {
+        const creatorId = await getCreatorId();
+        const itemsToInsert = prepareItemsToInsert(baseData, creatorId);
+        const { error } = await supabase.from('items_pago').insert(itemsToInsert);
+        if (error) throw error;
+        alert('Item creado exitosamente');
+    };
+
+    const handleUpdate = async (baseData) => {
         const dataToUpdate = {
             ...baseData,
             mes: formData.tipo_item === 'cuota_mensual' ? parseInt(formData.meses[0] || 0, 10) : null,
         };
         const { error } = await supabase.from('items_pago').update(dataToUpdate).eq('id', item.id);
         if (error) throw error;
+        alert('Item actualizado exitosamente');
     };
 
     const handleSubmit = async (e) => {
@@ -121,14 +124,10 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
 
         try {
             setLoading(true);
-
             if (item) {
-                await updateItem(baseData);
-                alert('Item actualizado exitosamente');
+                await handleUpdate(baseData);
             } else {
-                const creatorId = await getCreatorId();
-                await createItems(baseData, creatorId);
-                alert('Item creado exitosamente');
+                await handleCreate(baseData);
             }
             onSuccess();
         } catch (err) {
