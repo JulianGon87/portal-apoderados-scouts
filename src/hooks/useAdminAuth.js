@@ -36,13 +36,12 @@ export const useAdminAuth = (requiredPermissions = []) => {
             }
 
             // 2. Obtener datos del usuario desde la tabla users
-            const email = session.user.email;
-            const rut = email.split('@')[0]; // Extraer RUT del email
-
+            // 2. Obtener datos del usuario desde la tabla users usando el ID de sesión
+            // Buscamos por id (nuevos usuarios) o auth_user_id (usuarios antiguos)
             const { data: userData, error: userError } = await supabase
                 .from('users')
                 .select('id, nombre, rut, rol')
-                .eq('rut', rut)
+                .or(`id.eq.${session.user.id},auth_user_id.eq.${session.user.id}`)
                 .single();
 
             if (userError || !userData) {
