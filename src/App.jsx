@@ -16,7 +16,8 @@ import AdminPagos from './pages/admin/AdminPagos';
 import AdminAlumnos from './pages/admin/AdminAlumnos';
 import AdminLogros from './pages/admin/AdminLogros';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
-import AccessDenied from './pages/AccessDenied'; // Importar AccessDenied
+import ResumenFinanciero from './pages/admin/ResumenFinanciero';
+import AccessDenied from './pages/AccessDenied';
 
 function App() {
   return (
@@ -26,7 +27,7 @@ function App() {
           <Route index element={<LoginPage />} />
           <Route path="home" element={<HomePage />} />
           <Route path="alumno/:slug" element={<StudentProfilePage />} />
-          <Route path="access-denied" element={<AccessDenied />} /> {/* Ruta de diagnóstico */}
+          <Route path="access-denied" element={<AccessDenied />} />
           {/* Ruta 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -61,6 +62,11 @@ function App() {
           <Route path="usuarios" element={
             <ProtectedRoute requiredPermissions="gestionar_usuarios">
               <AdminUsuarios />
+            </ProtectedRoute>
+          } />
+          <Route path="resumen-financiero" element={
+            <ProtectedRoute requiredPermissions="ver_resumen_financiero">
+              <ResumenFinanciero />
             </ProtectedRoute>
           } />
         </Route>

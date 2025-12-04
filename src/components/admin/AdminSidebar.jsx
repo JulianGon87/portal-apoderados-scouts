@@ -48,6 +48,12 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             label: 'Gestión de Usuarios',
             icon: '⚙️',
             permission: 'gestionar_usuarios'
+        },
+        {
+            path: '/admin/resumen-financiero',
+            label: 'Resumen Financiero',
+            icon: '📈',
+            permission: 'ver_resumen_financiero'
         }
     ];
 

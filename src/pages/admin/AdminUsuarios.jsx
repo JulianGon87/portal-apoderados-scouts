@@ -23,6 +23,8 @@ export default function AdminUsuarios() {
         { value: 'scoutmaster', label: 'Scoutmaster' },
         { value: 'tesorero', label: 'Tesorero' },
         { value: 'jefe', label: 'Jefe de Unidad' },
+        { value: 'secretario', label: 'Secretario' },
+        { value: 'presidente', label: 'Presidente' },
         { value: 'apoderado', label: 'Apoderado' }
     ];
 
@@ -207,11 +209,22 @@ export default function AdminUsuarios() {
                                             {user.rut}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize
+                                            <span className={`px-2 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full capitalize
                                                 ${user.rol === 'admin' ? 'bg-purple-100 text-purple-800' :
                                                     user.rol === 'tesorero' ? 'bg-green-100 text-green-800' :
                                                         user.rol === 'scoutmaster' ? 'bg-blue-100 text-blue-800' :
-                                                            'bg-gray-100 text-gray-800'}`}>
+                                                            user.rol === 'jefe' ? 'bg-yellow-100 text-yellow-800' :
+                                                                user.rol === 'secretario' ? 'bg-pink-100 text-pink-800' :
+                                                                    user.rol === 'presidente' ? 'bg-indigo-100 text-indigo-800' :
+                                                                        'bg-gray-100 text-gray-800'}`}>
+                                                <span>
+                                                    {user.rol === 'admin' ? '🛡️' :
+                                                        user.rol === 'scoutmaster' ? '⚜️' :
+                                                            user.rol === 'tesorero' ? '💰' :
+                                                                user.rol === 'jefe' ? '⭐' :
+                                                                    user.rol === 'secretario' ? '📝' :
+                                                                        user.rol === 'presidente' ? '👔' : '👤'}
+                                                </span>
                                                 {user.rol}
                                             </span>
                                         </td>
