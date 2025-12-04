@@ -76,7 +76,7 @@ export default function HomePage() {
         setApoderado(apoderadoData);
 
         // Verificar si el usuario tiene permisos de admin
-        const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe'];
+        const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe', 'presidente', 'secretario'];
         setIsAdmin(adminRoles.includes(apoderadoData.rol));
 
         // 2. Obtener alumnos
