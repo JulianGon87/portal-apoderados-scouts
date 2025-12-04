@@ -54,3 +54,5 @@ reset_*.js
 get_*.js
 apply_migration.js
 test_data.xlsx
+
+docs/

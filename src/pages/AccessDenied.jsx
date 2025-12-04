@@ -27,7 +27,7 @@ export default function AccessDenied() {
         const { data: userRecord, error: userError } = await supabase
             .from('users')
             .select('*')
-            .eq('email', user.email)
+            .eq('auth_user_id', user.id)
             .single();
 
         if (userError) {

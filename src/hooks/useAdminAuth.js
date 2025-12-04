@@ -140,7 +140,8 @@ const getPermissionsByRole = (rol) => {
             'editar_alumnos',
             'eliminar_alumnos',
             'designar_logros',
-            'ver_metricas'
+            'ver_metricas',
+            'gestionar_usuarios'
         ],
         jefe: [
             'designar_logros'
