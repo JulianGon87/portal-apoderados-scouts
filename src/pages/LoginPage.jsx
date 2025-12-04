@@ -40,12 +40,33 @@ const LoginForm = () => {
       return;
     }
 
-    const emailFalso = `${rutLimpio}@scout.com`;
+    // Estrategia de doble dominio:
+    // 1. Intentar con @portal.scout (usuarios antiguos/admin)
+    // 2. Si falla, intentar con @scout.com (usuarios nuevos)
+    let emailToTry = `${rutLimpio}@portal.scout`;
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: emailFalso,
+    let { data, error } = await supabase.auth.signInWithPassword({
+      email: emailToTry,
       password: password,
     });
+
+    if (error) {
+      // Si falló el primero, intentamos con el segundo dominio
+      emailToTry = `${rutLimpio}@scout.com`;
+      const retryResult = await supabase.auth.signInWithPassword({
+        email: emailToTry,
+        password: password,
+      });
+
+      // Si el segundo intento tiene éxito, usamos esos datos
+      if (!retryResult.error) {
+        data = retryResult.data;
+        error = null;
+      } else {
+        // Si ambos fallan, mantenemos el error (o el del último intento)
+        error = retryResult.error;
+      }
+    }
 
     if (error) {
       setMessage('Error de credenciales. Verifique su RUT y clave.');
