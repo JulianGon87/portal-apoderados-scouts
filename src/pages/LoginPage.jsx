@@ -40,7 +40,7 @@ const LoginForm = () => {
       return;
     }
 
-    const emailFalso = `${rutLimpio}@portal.scout`;
+    const emailFalso = `${rutLimpio}@scout.com`;
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: emailFalso,
