@@ -20,7 +20,7 @@ export default function AdminUsuarios() {
 
     const rolesDisponibles = [
         { value: 'admin', label: 'Administrador' },
-        { value: 'scoutmaster', label: 'Scoutmaster' },
+        { value: 'scoutmaster', label: 'ScoutMaster' },
         { value: 'tesorero', label: 'Tesorero' },
         { value: 'jefe', label: 'Jefe de Unidad' },
         { value: 'secretario', label: 'Secretario' },
@@ -72,9 +72,15 @@ export default function AdminUsuarios() {
                     return;
                 }
 
-                const { error } = await supabase.from('users').insert([formData]);
-                if (error) throw error;
-                addToast('Usuario creado exitosamente', 'success');
+                // Usar Edge Function para crear usuario en Auth y DB
+                const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
+                    body: formData
+                });
+
+                if (funcError) throw funcError;
+                if (funcData?.error) throw new Error(funcData.error);
+
+                addToast('Usuario creado exitosamente. Contraseña inicial: 123456', 'success');
             } else {
                 // Editar
                 const { error } = await supabase
