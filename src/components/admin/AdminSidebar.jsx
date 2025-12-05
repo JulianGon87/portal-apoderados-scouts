@@ -54,6 +54,12 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             label: 'Resumen Financiero',
             icon: '📈',
             permission: 'ver_resumen_financiero'
+        },
+        {
+            path: '/admin/asistencia',
+            label: 'Control de Asistencia',
+            icon: '📝',
+            permission: 'tomar_asistencia'
         }
     ];
 
@@ -73,10 +79,10 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 bg-white shadow-lg transform transition-transform duration-300 z-50 overflow-y-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 bg-white shadow-lg transform transition-transform duration-300 z-50 flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'
                     } lg:translate-x-0`}
             >
-                <nav className="p-4 space-y-2">
+                <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
                     {visibleItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -112,7 +118,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                 </nav>
 
                 {/* Footer del Sidebar */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+                <div className="p-4 border-t border-gray-200 bg-gray-50">
                     <div className="text-xs text-gray-500 text-center">
                         <p className="font-semibold">Panel de Administración</p>
                         <p>ADMAPU © 2025</p>

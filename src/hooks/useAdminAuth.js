@@ -131,7 +131,8 @@ const getPermissionsByRole = (rol) => {
             'aprobar_pagos',
             'ver_metricas',
             'gestionar_usuarios',
-            'ver_resumen_financiero'
+            'ver_resumen_financiero',
+            'tomar_asistencia'
         ],
         scoutmaster: [
             'ver_dashboard',
@@ -141,10 +142,12 @@ const getPermissionsByRole = (rol) => {
             'eliminar_alumnos',
             'designar_logros',
             'ver_metricas',
-            'gestionar_usuarios'
+            'gestionar_usuarios',
+            'tomar_asistencia'
         ],
         jefe: [
-            'designar_logros'
+            'designar_logros',
+            'tomar_asistencia'
         ],
         tesorero: [
             'ver_dashboard',

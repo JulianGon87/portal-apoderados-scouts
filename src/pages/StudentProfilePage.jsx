@@ -67,7 +67,7 @@ export default function StudentProfilePage() {
             if (itemsError) console.error('Error al cargar items:', itemsError);
 
             const applicableItems = (itemsData || []).filter(item =>
-                !item.seccion || item.seccion === data.seccion
+                !item.seccion || (item.seccion && data.seccion && item.seccion.toUpperCase() === data.seccion.toUpperCase())
             );
             setItems(applicableItems);
 

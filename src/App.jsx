@@ -12,11 +12,11 @@ import ProtectedRoute from './components/admin/ProtectedRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ItemsCobro from './pages/admin/ItemsCobro';
 import AdminPagos from './pages/admin/AdminPagos';
-
 import AdminAlumnos from './pages/admin/AdminAlumnos';
 import AdminLogros from './pages/admin/AdminLogros';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
+import AdminAsistencia from './pages/admin/AdminAsistencia';
 import AccessDenied from './pages/AccessDenied';
 
 function App() {
@@ -67,6 +67,11 @@ function App() {
           <Route path="resumen-financiero" element={
             <ProtectedRoute requiredPermissions="ver_resumen_financiero">
               <ResumenFinanciero />
+            </ProtectedRoute>
+          } />
+          <Route path="asistencia" element={
+            <ProtectedRoute requiredPermissions="tomar_asistencia">
+              <AdminAsistencia />
             </ProtectedRoute>
           } />
         </Route>
