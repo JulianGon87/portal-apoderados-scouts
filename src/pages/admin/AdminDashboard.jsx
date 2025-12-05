@@ -228,14 +228,6 @@ const AdminDashboard = () => {
             {/* Métricas Principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
-                    title="Total Recaudado (Mes)"
-                    value={`$${stats.totalRecaudado.toLocaleString('es-CL')}`}
-                    icon="💵"
-                    color="green"
-                    subtitle={`${new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}`}
-                />
-
-                <StatsCard
                     title="Tickets Pendientes"
                     value={stats.ticketsPendientes}
                     icon="🎫"
@@ -249,6 +241,14 @@ const AdminDashboard = () => {
                     icon="✅"
                     color="blue"
                     subtitle="Esperando aprobación"
+                />
+
+                <StatsCard
+                    title="Total Recaudado (Mes)"
+                    value={`$${stats.totalRecaudado.toLocaleString('es-CL')}`}
+                    icon="💵"
+                    color="green"
+                    subtitle={`${new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}`}
                 />
 
                 <StatsCard

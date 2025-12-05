@@ -20,16 +20,16 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             exact: true
         },
         {
-            path: '/admin/items-cobro',
-            label: 'Items de Cobro',
-            icon: '💰',
-            permission: 'crear_items_cobro'
-        },
-        {
             path: '/admin/pagos',
             label: 'Gestión de Pagos',
             icon: '💳',
             permission: 'aprobar_pagos'
+        },
+        {
+            path: '/admin/asistencia',
+            label: 'Control de Asistencia',
+            icon: '📝',
+            permission: 'tomar_asistencia'
         },
         {
             path: '/admin/alumnos',
@@ -38,28 +38,28 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             permission: 'crear_alumnos'
         },
         {
-            path: '/admin/logros',
-            label: 'Designación de Logros',
-            icon: '🏆',
-            permission: 'designar_logros'
-        },
-        {
-            path: '/admin/usuarios',
-            label: 'Gestión de Usuarios',
-            icon: '⚙️',
-            permission: 'gestionar_usuarios'
-        },
-        {
             path: '/admin/resumen-financiero',
             label: 'Resumen Financiero',
             icon: '📈',
             permission: 'ver_resumen_financiero'
         },
         {
-            path: '/admin/asistencia',
-            label: 'Control de Asistencia',
-            icon: '📝',
-            permission: 'tomar_asistencia'
+            path: '/admin/logros',
+            label: 'Designación de Logros',
+            icon: '🏆',
+            permission: 'designar_logros'
+        },
+        {
+            path: '/admin/items-cobro',
+            label: 'Items de Cobro',
+            icon: '💰',
+            permission: 'crear_items_cobro'
+        },
+        {
+            path: '/admin/usuarios',
+            label: 'Gestión de Usuarios',
+            icon: '⚙️',
+            permission: 'gestionar_usuarios'
         }
     ];
 
