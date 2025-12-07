@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 
 import AlumnoCard from '../components/AlumnoCard';
+import SkeletonAlumnoCard from '../components/SkeletonAlumnoCard';
 import BottomNavigation from '../components/BottomNavigation';
 
 
@@ -463,7 +464,13 @@ export default function HomePage() {
               </span>
             </div>
 
-            {alumnos.length > 0 ? (
+            {loading ? (
+              <div className="grid gap-6">
+                {[1, 2].map((i) => (
+                  <SkeletonAlumnoCard key={i} />
+                ))}
+              </div>
+            ) : alumnos.length > 0 ? (
               <div className="grid gap-6">
                 {alumnos.map(alumno => (
                   <AlumnoCard
