@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client.js';
 
 import AlumnoCard from '../components/AlumnoCard';
+import BottomNavigation from '../components/BottomNavigation';
 
 
 
@@ -274,20 +275,37 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-full bg-gray-50 flex flex-col">
+    <div className="min-h-full bg-gray-50 flex flex-col pb-24 lg:pb-0">
       <main className="container mx-auto px-4 py-8 flex-grow max-w-7xl">
 
-        {/* Botón Móvil para abrir Sidebar */}
-        <button
-          onClick={() => setShowSidebar(true)}
-          className="lg:hidden w-full mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between text-scout-green font-bold hover:bg-green-50 transition-colors"
-        >
-          <span className="flex items-center gap-3">
-            <span className="bg-green-100 p-2 rounded-full text-xl">👤</span>
-            <span>Ver Mi Perfil y Opciones</span>
-          </span>
-          <span className="text-gray-400">→</span>
-        </button>
+
+
+
+        {/* Sticky Header para Móvil */}
+        <div className="lg:hidden sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm pt-2 pb-4 mb-6 border-b border-gray-200/50 transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-scout-green font-bold uppercase tracking-wider mb-0.5">Bienvenido/a</p>
+              <h1 className="text-xl font-display font-bold text-gray-900 leading-none">
+                {apoderado ? apoderado.nombre.split(' ')[0] : 'Explorador'}
+              </h1>
+            </div>
+
+            <div
+              className="relative p-0.5 rounded-full border-2 border-scout-green/20 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                {apoderado?.foto_url ? (
+                  <img src={apoderado.foto_url} alt="Perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-scout-green text-white font-bold">
+                    {apoderado?.nombre?.charAt(0) || 'S'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
@@ -301,88 +319,117 @@ export default function HomePage() {
             />
           )}
 
-          {/* Sidebar: Perfil Unificado */}
-          <div className={`
-              fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out
-              lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:bg-transparent lg:shadow-none lg:transform-none lg:transition-none lg:col-span-1 lg:block
-              ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          `}>
+          {/* Bottom Sheet Perfil (Móvil) / Sidebar (Desktop) */}
+          <div
+            className={`
+              fixed bottom-0 left-0 z-50 w-full bg-white rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] 
+              transform transition-transform duration-300 ease-out pb-24 lg:pb-0 max-h-[85vh] overflow-y-auto touch-pan-y overscroll-y-contain
+              lg:relative lg:transform-none lg:w-auto lg:bg-transparent lg:shadow-none lg:rounded-none lg:block lg:max-h-none lg:overflow-visible
+              ${showSidebar ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'}
+            `}
+            onTouchStart={(e) => {
+              // Solo capturamos el inicio si estamos al tope
+              if (e.currentTarget.scrollTop <= 5) {
+                const touch = e.touches[0];
+                e.currentTarget.dataset.startY = touch.clientY;
+                e.currentTarget.dataset.isDragging = 'true';
+              } else {
+                e.currentTarget.dataset.isDragging = 'false';
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.currentTarget.dataset.isDragging !== 'true') return;
 
+              const touch = e.touches[0];
+              const startY = parseFloat(e.currentTarget.dataset.startY);
+              const deltaY = touch.clientY - startY;
+
+              // Si desliza hacia abajo más de 80px (aumentado para evitar falsos positivos), cerrar
+              if (deltaY > 80) {
+                setShowSidebar(false);
+                e.currentTarget.dataset.isDragging = 'false'; // Reset evitar múltiples disparos
+              }
+            }}
+          >
+            {/* Handle bar for Mobile */}
+            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 lg:hidden" />
+
+            {/* Close Button Mobile (Absolute Top Right) */}
             <button
               onClick={() => setShowSidebar(false)}
-              className="absolute top-4 right-4 p-2 bg-white/10 text-white rounded-full lg:hidden z-20 hover:bg-white/20"
+              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 lg:hidden hover:bg-gray-200"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <span className="sr-only">Cerrar</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
             {apoderado && (
-              <div className="bg-gradient-to-b from-scout-green to-green-950 h-full lg:h-auto lg:rounded-2xl shadow-xl overflow-y-auto lg:overflow-visible text-white relative">
-                <div className="absolute top-0 left-0 w-full h-32 bg-white/5 opacity-50 rounded-b-[50%] transform -translate-y-1/2"></div>
+              <div className="p-6 lg:p-0">
+                {/* Desktop Card Wrapper */}
+                <div className="lg:bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-gray-200 lg:p-6 lg:overflow-hidden">
 
-                <div className="p-6 text-center relative z-10">
-                  <h3 className="text-2xl font-bold mb-6 px-2 leading-tight">
-                    {apoderado.nombre} {apoderado.apellidos}
-                  </h3>
-
-                  <div className="relative inline-block mb-6">
-                    <div className="w-40 h-40 mx-auto bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-6xl border-4 border-white/30 shadow-lg overflow-hidden">
-                      {apoderado.foto_url ? (
-                        <img src={apoderado.foto_url} alt="Perfil" className="w-full h-full object-cover" />
-                      ) : (
-                        <span>👤</span>
-                      )}
+                  {/* Header Perfil Compacto */}
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="relative group">
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-scout-green/10">
+                        {apoderado.foto_url ? (
+                          <img src={apoderado.foto_url} alt="Perfil" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-scout-green text-white font-bold text-xl">
+                            {apoderado.nombre?.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      {/* Mini Edit Button */}
+                      <label className="absolute -bottom-1 -right-1 bg-white p-1.5 rounded-full shadow border border-gray-100 cursor-pointer hover:bg-gray-50 text-scout-green">
+                        <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </label>
                     </div>
-                    <label className="absolute bottom-2 right-2 bg-white text-scout-green p-3 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors group" title="Cambiar foto">
-                      <span className="sr-only">Cambiar foto de perfil</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </label>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 truncate">
+                        {apoderado.nombre}
+                      </h3>
+                      <p className="text-sm text-gray-500 truncate">{apoderado.email}</p>
+                    </div>
                   </div>
 
-                  <p className="text-green-100 text-sm mb-8">{apoderado.email}</p>
-
-                  <div className="space-y-3 mb-8 px-8">
+                  {/* Action List */}
+                  <div className="space-y-1">
                     {isAdmin && (
-                      <button
-                        onClick={() => navigate('/admin')}
-                        className="w-full py-2.5 px-4 bg-white text-scout-green rounded-xl font-bold shadow-lg hover:bg-green-50 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
-                      >
-                        <span>⚙️</span> Panel Admin
+                      <button onClick={() => navigate('/admin')} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-orange-50 text-orange-700 font-medium transition-colors">
+                        <span className="p-1.5 bg-orange-100 rounded-lg">⚙️</span>
+                        Panel de Administración
                       </button>
                     )}
 
-                    <button
-                      onClick={() => setShowPasswordModal(true)}
-                      className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50"
-                    >
-                      🔒 Cambiar Contraseña
+                    <button onClick={() => setShowEditProfileModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                      <span className="p-1.5 bg-gray-100 rounded-lg text-gray-500">✏️</span>
+                      Editar mis datos
                     </button>
 
-                    <button
-                      onClick={() => setShowEditProfileModal(true)}
-                      className="w-full py-2.5 px-4 bg-green-800/40 hover:bg-green-800/60 border border-green-500/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 backdrop-blur-sm text-green-50"
-                    >
-                      ✏️ Editar Perfil
+                    <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                      <span className="p-1.5 bg-gray-100 rounded-lg text-gray-500">🔒</span>
+                      Cambiar contraseña
                     </button>
                   </div>
 
+                  {/* Emergency Contact Compact */}
                   {(apoderado.nombre_contacto_emergencia || apoderado.telefono_contacto_emergencia) && (
-                    <div className="text-left bg-black/20 rounded-xl p-5 backdrop-blur-sm mx-4 border border-white/5">
-                      <div className="flex items-start gap-4">
-                        <span className="text-3xl">🚨</span>
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-400"></span> Emergencia
+                      </p>
+                      <div className="bg-red-50/50 rounded-xl p-3 flex items-center gap-3">
+                        <span className="text-xl">🚨</span>
                         <div>
-                          <p className="text-[10px] text-red-300 font-bold uppercase tracking-widest mb-1">En caso de emergencia</p>
-                          {apoderado.nombre_contacto_emergencia && (
-                            <p className="font-bold text-white text-base leading-tight">{apoderado.nombre_contacto_emergencia}</p>
-                          )}
-                          {apoderado.telefono_contacto_emergencia && (
-                            <p className="text-green-100 text-sm mt-0.5">{apoderado.telefono_contacto_emergencia}</p>
-                          )}
+                          <p className="text-sm font-bold text-gray-800">{apoderado.nombre_contacto_emergencia}</p>
+                          <p className="text-xs text-gray-500">{apoderado.telefono_contacto_emergencia}</p>
                         </div>
                       </div>
                     </div>
@@ -390,12 +437,25 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+
+            {/* Redes Sociales en Menú Móvil (Movidas desde el Footer) */}
+            <div className="mt-8 pb-6 text-center lg:hidden">
+              <p className="text-xs text-gray-400 mb-3 font-medium">SÍGUENOS EN</p>
+              <div className="flex justify-center gap-6">
+                <a href="https://www.facebook.com/grupo.admapu" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-scout-blue transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                </a>
+                <a href="https://www.instagram.com/gscoutadmapu/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Columna Principal: Alumnos */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-              <h2 className="text-3xl font-display font-bold text-gray-800">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mt-2 lg:mt-0">
+              <h2 className="text-2xl lg:text-3xl font-display font-bold text-gray-800">
                 Mis Hijos
               </h2>
               <span className="bg-scout-green/10 text-scout-green px-3 py-1 rounded-full text-sm font-bold">
@@ -642,6 +702,16 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      {/* Bottom Navigation para Móvil */}
+      <BottomNavigation
+        onHomeClick={() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setShowSidebar(false);
+        }}
+        onProfileClick={() => setShowSidebar(!showSidebar)}
+        onAdminClick={() => navigate('/admin')}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }

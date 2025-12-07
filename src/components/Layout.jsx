@@ -132,8 +132,10 @@ export default function Layout() {
                 <Outlet />
             </main>
 
-            {/* Footer Global */}
-            <Footer />
+            {/* Footer Global: Oculto en móvil solo en Home para no ensuciar */}
+            <div className={location.pathname === '/home' ? 'hidden lg:block' : ''}>
+                <Footer />
+            </div>
         </div>
     );
 }
