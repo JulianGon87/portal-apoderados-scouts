@@ -276,18 +276,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-full bg-gray-50 flex flex-col pb-24 lg:pb-0">
+    <div className="min-h-full bg-stone-50 flex flex-col pb-24 lg:pb-0">
       <main className="container mx-auto px-4 py-8 flex-grow max-w-7xl">
 
 
 
 
-        {/* Sticky Header para Móvil */}
-        <div className="lg:hidden sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm pt-2 pb-4 mb-6 border-b border-gray-200/50 transition-all duration-300">
+        {/* Sticky Header para Móvil - Con estilo Scout */}
+        <div className="lg:hidden sticky top-0 z-30 -mx-4 px-4 bg-gradient-to-r from-scout-green/10 to-scout-blue/10 backdrop-blur-md pt-4 pb-6 mb-8 border-b border-scout-green/10 shadow-sm transition-all duration-300 rounded-b-3xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-scout-green font-bold uppercase tracking-wider mb-0.5">Bienvenido/a</p>
-              <h1 className="text-xl font-display font-bold text-gray-900 leading-none">
+              <p className="text-xs text-scout-green font-bold uppercase tracking-wider mb-0.5">Siempre Listos</p>
+              <h1 className="text-xl font-display font-bold text-stone-900 leading-none">
                 {apoderado ? apoderado.nombre.split(' ')[0] : 'Explorador'}
               </h1>
             </div>
@@ -295,7 +295,7 @@ export default function HomePage() {
             <div
               className="relative p-0.5 rounded-full border-2 border-scout-green/20 transition-colors"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-200">
                 {apoderado?.foto_url ? (
                   <img src={apoderado.foto_url} alt="Perfil" className="w-full h-full object-cover" />
                 ) : (
@@ -353,12 +353,12 @@ export default function HomePage() {
             }}
           >
             {/* Handle bar for Mobile */}
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 lg:hidden" />
+            <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 lg:hidden" />
 
             {/* Close Button Mobile (Absolute Top Right) */}
             <button
               onClick={() => setShowSidebar(false)}
-              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 lg:hidden hover:bg-gray-200"
+              className="absolute top-4 right-4 p-2 bg-stone-100 rounded-full text-stone-500 lg:hidden hover:bg-stone-200"
             >
               <span className="sr-only">Cerrar</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -369,12 +369,12 @@ export default function HomePage() {
             {apoderado && (
               <div className="p-6 lg:p-0">
                 {/* Desktop Card Wrapper */}
-                <div className="lg:bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-gray-200 lg:p-6 lg:overflow-hidden">
+                <div className="lg:bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-stone-200 lg:p-6 lg:overflow-hidden">
 
                   {/* Header Perfil Compacto */}
                   <div className="flex items-center gap-4 mb-8">
                     <div className="relative group">
-                      <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-scout-green/10">
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-stone-100 border-2 border-scout-green/10">
                         {apoderado.foto_url ? (
                           <img src={apoderado.foto_url} alt="Perfil" className="w-full h-full object-cover" />
                         ) : (
@@ -384,7 +384,7 @@ export default function HomePage() {
                         )}
                       </div>
                       {/* Mini Edit Button */}
-                      <label className="absolute -bottom-1 -right-1 bg-white p-1.5 rounded-full shadow border border-gray-100 cursor-pointer hover:bg-gray-50 text-scout-green">
+                      <label className="absolute -bottom-1 -right-1 bg-white p-1.5 rounded-full shadow border border-stone-100 cursor-pointer hover:bg-stone-50 text-scout-green">
                         <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -393,10 +393,10 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 truncate">
+                      <h3 className="text-lg font-bold text-stone-900 truncate">
                         {apoderado.nombre}
                       </h3>
-                      <p className="text-sm text-gray-500 truncate">{apoderado.email}</p>
+                      <p className="text-sm text-stone-500 truncate">{apoderado.email}</p>
                     </div>
                   </div>
 
@@ -409,28 +409,39 @@ export default function HomePage() {
                       </button>
                     )}
 
-                    <button onClick={() => setShowEditProfileModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
-                      <span className="p-1.5 bg-gray-100 rounded-lg text-gray-500">✏️</span>
+                    <button onClick={() => setShowEditProfileModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-stone-50 text-stone-700 font-medium transition-colors">
+                      <span className="p-1.5 bg-stone-100 rounded-lg text-stone-500">✏️</span>
                       Editar mis datos
                     </button>
 
-                    <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
-                      <span className="p-1.5 bg-gray-100 rounded-lg text-gray-500">🔒</span>
+                    <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-stone-50 text-stone-700 font-medium transition-colors">
+                      <span className="p-1.5 bg-stone-100 rounded-lg text-stone-500">🔒</span>
                       Cambiar contraseña
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        navigate('/');
+                      }}
+                      className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-red-50 text-red-600 font-medium transition-colors mt-2 border-t border-stone-100 pt-4"
+                    >
+                      <span className="p-1.5 bg-red-100 rounded-lg text-red-500">🚪</span>
+                      Cerrar Sesión
                     </button>
                   </div>
 
                   {/* Emergency Contact Compact */}
                   {(apoderado.nombre_contacto_emergencia || apoderado.telefono_contacto_emergencia) && (
-                    <div className="mt-8 pt-6 border-t border-gray-100">
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <div className="mt-8 pt-6 border-t border-stone-100">
+                      <p className="text-xs text-stone-400 font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-red-400"></span> Emergencia
                       </p>
                       <div className="bg-red-50/50 rounded-xl p-3 flex items-center gap-3">
                         <span className="text-xl">🚨</span>
                         <div>
-                          <p className="text-sm font-bold text-gray-800">{apoderado.nombre_contacto_emergencia}</p>
-                          <p className="text-xs text-gray-500">{apoderado.telefono_contacto_emergencia}</p>
+                          <p className="text-sm font-bold text-stone-800">{apoderado.nombre_contacto_emergencia}</p>
+                          <p className="text-xs text-stone-500">{apoderado.telefono_contacto_emergencia}</p>
                         </div>
                       </div>
                     </div>
@@ -455,8 +466,8 @@ export default function HomePage() {
 
           {/* Columna Principal: Alumnos */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mt-2 lg:mt-0">
-              <h2 className="text-2xl lg:text-3xl font-display font-bold text-gray-800">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-4 mt-2 lg:mt-0">
+              <h2 className="text-2xl lg:text-3xl font-display font-bold text-stone-800">
                 Mis Hijos
               </h2>
               <span className="bg-scout-green/10 text-scout-green px-3 py-1 rounded-full text-sm font-bold">
@@ -481,12 +492,12 @@ export default function HomePage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+              <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center">
                 <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
                   ⚠️
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">No hay alumnos asociados</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-stone-800 mb-2">No hay alumnos asociados</h3>
+                <p className="text-stone-500 max-w-md mx-auto">
                   No hemos encontrado estudiantes vinculados a tu cuenta. Si crees que es un error, contacta a un dirigente.
                 </p>
               </div>

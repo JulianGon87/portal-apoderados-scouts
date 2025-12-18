@@ -18,7 +18,7 @@ const PasswordInput = ({
     return (
         <div>
             {label && (
-                <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={id} className="block text-sm font-medium text-stone-700 mb-1">
                     {label}
                 </label>
             )}
@@ -32,12 +32,12 @@ const PasswordInput = ({
                     placeholder={placeholder}
                     required={required}
                     autoComplete={autoComplete}
-                    className={`w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent ${className}`}
+                    className={`w-full px-4 py-2 pr-12 border border-stone-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent ${className}`}
                 />
                 <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-700 focus:outline-none"
                     tabIndex={-1}
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >

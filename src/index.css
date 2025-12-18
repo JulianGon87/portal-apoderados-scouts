@@ -36,7 +36,7 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased bg-gray-50;
+    @apply font-sans antialiased bg-stone-50 text-stone-800;
   }
 }
 
@@ -49,7 +49,7 @@
   }
 
   .card-glass {
-    @apply bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl;
+    @apply bg-stone-50/90 backdrop-blur-lg rounded-2xl shadow-xl;
     @apply border border-white/20;
   }
 }

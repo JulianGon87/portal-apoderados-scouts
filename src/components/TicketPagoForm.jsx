@@ -146,11 +146,11 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
         return (
             <div className="text-center py-6">
                 <div className="text-green-500 text-5xl mb-4">🎉</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">¡Estás al día!</h3>
-                <p className="text-gray-600 mb-6">No tienes deudas pendientes para informar.</p>
+                <h3 className="text-xl font-bold text-stone-800 mb-2">¡Estás al día!</h3>
+                <p className="text-stone-600 mb-6">No tienes deudas pendientes para informar.</p>
                 <button
                     onClick={onCancel}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition-colors"
                 >
                     Cerrar
                 </button>
@@ -162,7 +162,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
         <form onSubmit={handleSubmit} className="space-y-2">
             <div>
                 <div className="flex justify-between items-center mb-1">
-                    <span className="block text-sm font-medium text-gray-700">
+                    <span className="block text-sm font-medium text-stone-700">
                         Selecciona las deudas a pagar
                     </span>
                     <button
@@ -174,7 +174,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                     </button>
                 </div>
 
-                <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg divide-y divide-gray-100 bg-gray-50">
+                <div className="max-h-32 overflow-y-auto border border-stone-300 rounded-lg divide-y divide-stone-100 bg-stone-50">
                     {deudasPendientes.map(item => (
                         <label
                             key={item.id}
@@ -184,18 +184,18 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                                 type="checkbox"
                                 checked={selectedIds.includes(item.id)}
                                 onChange={() => handleCheckboxChange(item.id)}
-                                className="w-4 h-4 text-scout-blue rounded border-gray-300 focus:ring-scout-blue"
+                                className="w-4 h-4 text-scout-blue rounded border-stone-300 focus:ring-scout-blue"
                             />
                             <div className="ml-3 flex-1">
                                 <div className="flex justify-between items-center">
-                                    <span className="font-medium text-gray-800 text-sm">
+                                    <span className="font-medium text-stone-800 text-sm">
                                         {item.descripcion}
                                     </span>
-                                    <span className="font-bold text-gray-700 text-sm">
+                                    <span className="font-bold text-stone-700 text-sm">
                                         ${item.monto.toLocaleString('es-CL')}
                                     </span>
                                 </div>
-                                <div className="text-xs text-gray-500 flex gap-2">
+                                <div className="text-xs text-stone-500 flex gap-2">
                                     <span className="capitalize">{item.tipo_item.replace('_', ' ')}</span>
                                     {item.mes && (
                                         <span className="font-semibold text-scout-blue">
@@ -207,7 +207,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                         </label>
                     ))}
                 </div>
-                <p className="text-right text-xs text-gray-500 mt-1">
+                <p className="text-right text-xs text-stone-500 mt-1">
                     {selectedIds.length} ítem(s) seleccionado(s)
                 </p>
             </div>
@@ -221,7 +221,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                 </div>
 
                 <div>
-                    <label htmlFor="fecha_pago" className="block text-xs font-medium text-gray-700 mb-1">
+                    <label htmlFor="fecha_pago" className="block text-xs font-medium text-stone-700 mb-1">
                         Fecha Transferencia
                     </label>
                     <input
@@ -230,17 +230,17 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                         value={formData.fecha_pago}
                         max={new Date().toLocaleDateString('en-CA')}
                         onChange={(e) => setFormData({ ...formData, fecha_pago: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                        className="w-full px-2 py-1.5 text-sm border border-stone-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
                         required
                     />
                 </div>
             </div>
 
             <div>
-                <label htmlFor="comprobante" className="block text-xs font-medium text-gray-700 mb-1">
+                <label htmlFor="comprobante" className="block text-xs font-medium text-stone-700 mb-1">
                     Comprobante (Imagen o PDF)
                 </label>
-                <div className="mt-1 flex justify-center px-4 py-2 border-2 border-gray-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
+                <div className="mt-1 flex justify-center px-4 py-2 border-2 border-stone-300 border-dashed rounded-lg hover:border-scout-blue transition-colors cursor-pointer bg-white relative">
                     <input
                         id="comprobante"
                         type="file"
@@ -251,12 +251,12 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                     />
                     <div className="space-y-0.5 text-center">
                         <span className="text-xl">📎</span>
-                        <div className="flex text-xs text-gray-600 justify-center">
+                        <div className="flex text-xs text-stone-600 justify-center">
                             <span className="font-medium text-scout-blue truncate max-w-[200px]">
                                 {file ? file.name : 'Sube un archivo'}
                             </span>
                         </div>
-                        <p className="text-[10px] text-gray-500">PNG, JPG, PDF hasta 5MB</p>
+                        <p className="text-[10px] text-stone-500">PNG, JPG, PDF hasta 5MB</p>
                     </div>
                 </div>
             </div>
@@ -265,7 +265,7 @@ const TicketPagoForm = ({ alumno, items, pagos = [], tickets = [], onSuccess, on
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-3 py-2 text-sm text-stone-700 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors"
                     disabled={loading}
                 >
                     Cancelar

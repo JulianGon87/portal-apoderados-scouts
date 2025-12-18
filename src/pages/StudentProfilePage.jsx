@@ -110,7 +110,7 @@ export default function StudentProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-stone-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-scout-blue"></div>
             </div>
         );
@@ -119,131 +119,152 @@ export default function StudentProfilePage() {
     if (!alumno) return null;
 
     return (
-        <div className="min-h-full bg-gray-50 pb-12">
-            {/* Header / Portada Compacto */}
-            <div className="bg-gradient-to-r from-scout-green to-scout-blue text-white pb-10 pt-6 px-4 shadow-lg">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+        <div className="min-h-full bg-stone-50 pb-24">
+            {/* --- TOP BAR (Navegación) --- */}
+            <div className="sticky top-0 z-30 bg-stone-50/90 backdrop-blur-md border-b border-stone-200 px-4 py-3 flex items-center justify-between shadow-sm transition-all duration-300">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="p-2 -ml-2 rounded-full text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                    aria-label="Volver"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
 
-                        {/* Columna 1: Avatar */}
-                        <div className="relative group flex-shrink-0">
-                            <div className="w-32 h-32 md:w-40 md:h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-6xl md:text-7xl border-4 border-white/30 shadow-xl overflow-hidden transition-all duration-300">
+                <h1 className="text-lg font-bold text-gray-800 truncate max-w-[200px]">
+                    Perfil de Alumno
+                </h1>
+
+                <button className="p-2 -mr-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* --- HERO COMPACTO --- */}
+            <div className="px-4 pt-6 pb-4 bg-white border-b border-stone-200 shadow-sm rounded-b-3xl mb-4">
+                <div className="flex flex-col items-center text-center">
+
+                    {/* Avatar con Botón de Edición Sutil */}
+                    <div className="relative group mb-3">
+                        <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-scout-green to-scout-blue shadow-lg">
+                            <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-gray-100">
                                 {alumno.foto_url ? (
                                     <img src={alumno.foto_url} alt="Foto de perfil" className="w-full h-full object-cover" />
                                 ) : (
-                                    '👦'
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-4xl">
+                                        👦
+                                    </div>
                                 )}
                             </div>
-                            <label className="absolute bottom-2 right-2 bg-white text-scout-blue p-2 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 transition-colors transform hover:scale-110" title="Cambiar foto">
+                        </div>
+
+                        <label className="absolute bottom-0 right-0 bg-white text-scout-blue p-1.5 rounded-full shadow-md border border-gray-100 cursor-pointer hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                    // Logica de subida existente
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+                                    try {
+                                        setLoading(true);
+                                        const fileExt = file.name.split('.').pop();
+                                        const fileName = `${alumno.id}-${Date.now()}.${fileExt}`;
+                                        const filePath = `${fileName}`;
+                                        const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+                                        if (uploadError) throw uploadError;
+                                        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                                        const { error: updateError } = await supabase.from('alumnos').update({ foto_url: publicUrl }).eq('id', alumno.id);
+                                        if (updateError) throw updateError;
+                                        setAlumno({ ...alumno, foto_url: publicUrl });
+                                    } catch (error) {
+                                        console.error('Error:', error);
+                                        alert('Error al subir la imagen');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                            />
+                        </label>
+                    </div>
+
+                    {/* Información Principal */}
+                    <h2 className="text-2xl font-bold text-gray-900 font-display leading-tight mb-1">
+                        {alumno.nombre} {alumno.apellidos_alumno?.split(' ')[0]}
+                    </h2>
+
+                    <div className="flex flex-wrap justify-center gap-2 mt-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                            🏕️ {alumno.seccion || 'Sin Sección'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                            🎓 {alumno.curso}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
+                            📋 {formatRut(alumno.rut_alumno)}
+                        </span>
+                    </div>
+
+                    {/* Estado Financiero Resumido ("Deuda" o "Al día") - Pill Flotante */}
+                    <div
+                        className={`mt-4 w-full max-w-xs p-1 pr-4 rounded-full border transition-all flex items-center justify-between gap-3 ${totalDebt > 0
+                            ? 'bg-red-50 border-red-100 text-red-700'
+                            : 'bg-green-50 border-green-100 text-green-700'
+                            }`}
+                        role="alert"
+                    >
+                        <div className={`p-2 rounded-full ${totalDebt > 0 ? 'bg-white text-red-500 shadow-sm' : 'bg-white text-green-500 shadow-sm'}`}>
+                            {totalDebt > 0 ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={async (e) => {
-                                        const file = e.target.files[0];
-                                        if (!file) return;
-
-                                        try {
-                                            setLoading(true);
-                                            const fileExt = file.name.split('.').pop();
-                                            const fileName = `${alumno.id}-${Date.now()}.${fileExt}`;
-                                            const filePath = `${fileName}`;
-
-                                            const { error: uploadError } = await supabase.storage
-                                                .from('avatars')
-                                                .upload(filePath, file);
-
-                                            if (uploadError) throw uploadError;
-
-                                            const { data: { publicUrl } } = supabase.storage
-                                                .from('avatars')
-                                                .getPublicUrl(filePath);
-
-                                            const { error: updateError } = await supabase
-                                                .from('alumnos')
-                                                .update({ foto_url: publicUrl })
-                                                .eq('id', alumno.id);
-
-                                            if (updateError) throw updateError;
-
-                                            setAlumno({ ...alumno, foto_url: publicUrl });
-                                        } catch (error) {
-                                            console.error('Error subiendo imagen:', error);
-                                            alert('Error al subir la imagen');
-                                        } finally {
-                                            setLoading(false);
-                                        }
-                                    }}
-                                />
-                            </label>
-                        </div>
-
-                        {/* Columna 2: Información Personal */}
-                        <div className="flex-grow text-center md:text-left space-y-3">
-                            <div>
-                                <h1 className="text-2xl md:text-4xl font-bold font-display leading-tight tracking-tight">
-                                    {alumno.nombre} {alumno.apellidos_alumno}
-                                </h1>
-                                <p className="text-white/80 text-sm md:text-base font-medium mt-1">
-                                    Perfil del Alumno
-                                </p>
-                            </div>
-
-                            <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
-                                    🏕️ <span className="opacity-75">Sección:</span> {alumno.seccion || 'Sin Sección'}
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
-                                    📋 <span className="opacity-75">RUT:</span> {formatRut(alumno.rut_alumno)}
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium backdrop-blur-sm border border-white/10 shadow-sm">
-                                    🎓 <span className="opacity-75">Curso:</span> {alumno.curso}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Columna 3: Estado Financiero (Card Flotante) */}
-                        <div className="w-full md:w-auto flex flex-col gap-3 min-w-[200px]">
-                            <div className={`p-4 rounded-xl backdrop-blur-md border border-white/20 shadow-xl text-center transition-transform hover:scale-105 ${totalDebt === 0
-                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/30 text-white'
-                                : 'bg-gradient-to-br from-red-500/30 to-red-600/30 text-white'
-                                }`}>
-                                <p className="text-[10px] uppercase tracking-widest font-bold opacity-90 mb-1">Estado Financiero</p>
-                                <p className="text-xl md:text-2xl font-bold">
-                                    {totalDebt === 0 ? '✅ Al Día' : `$${totalDebt.toLocaleString('es-CL')}`}
-                                </p>
-                                {totalDebt > 0 && <p className="text-xs opacity-90 font-medium">Deuda Total</p>}
-                            </div>
-
-                            {pendingCount > 0 && (
-                                <button
-                                    onClick={() => setShowTicketForm(true)}
-                                    className="w-full bg-white text-scout-blue px-4 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex items-center justify-center gap-2 group"
-                                >
-                                    <span>💸</span>
-                                    <span className="group-hover:underline decoration-2 underline-offset-2">Informar Pago</span>
-                                </button>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
                             )}
                         </div>
 
+                        <div className="flex-1 text-left flex justify-between items-center">
+                            <span className="text-sm font-bold">
+                                {totalDebt > 0 ? 'Deuda Pendiente' : 'Estás al día'}
+                            </span>
+                            <span className="text-sm font-bold">
+                                {totalDebt > 0 ? `$${totalDebt.toLocaleString('es-CL')}` : '¡Excelente!'}
+                            </span>
+                        </div>
+
+                        {totalDebt > 0 && (
+                            <button
+                                onClick={() => setShowTicketForm(true)}
+                                className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-red-700 transition-colors"
+                            >
+                                Pagar
+                            </button>
+                        )}
                     </div>
+
                 </div>
             </div>
 
-            {/* Contenido Principal */}
-            <div className="max-w-4xl mx-auto px-2 md:px-4 -mt-6 md:-mt-8">
-                <div className="bg-white rounded-xl shadow-xl overflow-hidden min-h-[500px]">
+            {/* Contenido Principal (Manteniendo estructura interna por ahora) */}
+            <div className="max-w-4xl mx-auto px-4">
+                <div className="bg-transparent">
 
                     {/* Tabs Principales */}
                     <div className="flex border-b border-gray-200">
                         <button
                             className={`flex-1 py-3 text-center font-medium text-sm md:text-lg transition-colors ${activeTab === 'logros'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-50'
                                 }`}
                             onClick={() => setActiveTab('logros')}
                         >
@@ -252,7 +273,7 @@ export default function StudentProfilePage() {
                         <button
                             className={`flex-1 py-3 text-center font-medium text-sm md:text-lg transition-colors ${activeTab === 'pagos'
                                 ? 'text-scout-blue border-b-2 border-scout-blue bg-blue-50/30'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-50'
                                 }`}
                             onClick={() => setActiveTab('pagos')}
                         >
@@ -264,7 +285,7 @@ export default function StudentProfilePage() {
                         {activeTab === 'pagos' && (
                             <div className="animate-fade-in">
                                 {/* Sub-tabs para Pagos */}
-                                <div className="grid grid-cols-3 gap-1 mb-4 md:mb-6 bg-gray-100 p-1 rounded-xl w-full md:w-fit mx-auto md:mx-0">
+                                <div className="grid grid-cols-3 gap-1 mb-4 md:mb-6 bg-stone-100 p-1 rounded-xl w-full md:w-fit mx-auto md:mx-0">
                                     <button
                                         onClick={() => setPaymentTab('mensual')}
                                         className={`py-2 px-1 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center ${paymentTab === 'mensual'
@@ -287,7 +308,7 @@ export default function StudentProfilePage() {
                                         onClick={() => setPaymentTab('tickets')}
                                         className={`py-2 px-1 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center gap-1 ${paymentTab === 'tickets'
                                             ? 'bg-white text-scout-blue shadow-sm'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                            : 'text-stone-500 hover:text-stone-700'
                                             }`}
                                     >
                                         Solicitudes
@@ -300,7 +321,7 @@ export default function StudentProfilePage() {
                                             .filter(month => month.items && month.items.length > 0)
                                             .map((month) => (
                                                 <div key={month.monthId} className="p-3 md:p-4 rounded-xl border bg-white shadow-sm">
-                                                    <h3 className="font-bold text-base md:text-lg mb-2 text-gray-800">{month.monthName}</h3>
+                                                    <h3 className="font-bold text-base md:text-lg mb-2 text-stone-800">{month.monthName}</h3>
                                                     <ul className="space-y-2">
                                                         {month.items.map((item) => {
                                                             // Buscar si existe un ticket rechazado para este ítem
@@ -313,22 +334,22 @@ export default function StudentProfilePage() {
                                                                     key={item.id}
                                                                     className={`flex flex-col p-2 rounded border ${item.isPaid ? 'bg-green-50 border-green-200' :
                                                                         rejectedTicket ? 'bg-red-50 border-red-200' :
-                                                                            'bg-gray-50 border-gray-200'
+                                                                            'bg-stone-50 border-stone-200'
                                                                         }`}
                                                                 >
                                                                     <div className="flex justify-between items-center w-full">
                                                                         <div className="flex items-center gap-2">
                                                                             <span className={`w-2 h-2 rounded-full ${item.isPaid ? 'bg-green-600' :
                                                                                 rejectedTicket ? 'bg-red-600' :
-                                                                                    'bg-gray-400'
+                                                                                    'bg-stone-400'
                                                                                 }`} />
-                                                                            <span className="font-medium text-gray-800 text-sm">{item.descripcion}</span>
+                                                                            <span className="font-medium text-stone-800 text-sm">{item.descripcion}</span>
                                                                         </div>
                                                                         <div className="text-right">
                                                                             <span className="font-bold text-sm">${item.monto.toLocaleString('es-CL')}</span>
                                                                             <span className={`ml-2 text-[10px] md:text-xs font-semibold ${item.isPaid ? 'text-green-600' :
                                                                                 rejectedTicket ? 'text-red-600' :
-                                                                                    'text-gray-500'
+                                                                                    'text-stone-500'
                                                                                 }`}>
                                                                                 {item.isPaid ? 'Pagado' : rejectedTicket ? 'RECHAZADO' : 'Pendiente'}
                                                                             </span>
@@ -351,9 +372,9 @@ export default function StudentProfilePage() {
                                 {paymentTab === 'otros' && (
                                     <div className="space-y-3 md:space-y-4">
                                         {paymentGroups.otros.length === 0 ? (
-                                            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                            <div className="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-300">
                                                 <p className="text-4xl mb-2">📭</p>
-                                                <p className="text-gray-500 font-medium">No hay otros pagos registrados.</p>
+                                                <p className="text-stone-500 font-medium">No hay otros pagos registrados.</p>
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-3 md:gap-4">
@@ -364,7 +385,7 @@ export default function StudentProfilePage() {
                                                     );
 
                                                     return (
-                                                        <div key={pago.id} className={`bg-white p-3 md:p-5 rounded-xl border hover:shadow-md transition-shadow flex flex-col gap-2 md:gap-3 ${rejectedTicket ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
+                                                        <div key={pago.id} className={`bg-white p-3 md:p-5 rounded-xl border hover:shadow-md transition-shadow flex flex-col gap-2 md:gap-3 ${rejectedTicket ? 'border-red-200 bg-red-50/30' : 'border-stone-200'
                                                             }`}>
                                                             <div className="flex justify-between items-center w-full">
                                                                 <div className="flex items-center gap-3">
@@ -375,10 +396,10 @@ export default function StudentProfilePage() {
                                                                                 pago.tipo_item === 'rifa' ? '🎟️' : '🏷️'}
                                                                     </div>
                                                                     <div>
-                                                                        <h4 className="font-bold text-gray-800 text-base md:text-lg capitalize leading-tight">
+                                                                        <h4 className="font-bold text-stone-800 text-base md:text-lg capitalize leading-tight">
                                                                             {pago.tipo_item.replace('_', ' ')}
                                                                         </h4>
-                                                                        <p className="text-gray-600 text-xs md:text-sm">{pago.descripcion}</p>
+                                                                        <p className="text-stone-600 text-xs md:text-sm">{pago.descripcion}</p>
                                                                         {pago.fecha_limite && (
                                                                             <p className="text-xs text-scout-blue font-medium mt-0.5 flex items-center gap-1">
                                                                                 📅 {new Date(pago.fecha_limite + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -392,7 +413,7 @@ export default function StudentProfilePage() {
                                                                     </p>
                                                                     <span className={`inline-block text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold mt-1 ${pago.isPaid ? 'bg-green-100 text-green-700' :
                                                                         rejectedTicket ? 'bg-red-100 text-red-700' :
-                                                                            'bg-gray-100 text-gray-700'
+                                                                            'bg-stone-100 text-stone-700'
                                                                         }`}>
                                                                         {pago.isPaid ? 'PAGADO' : rejectedTicket ? 'RECHAZADO' : 'PENDIENTE'}
                                                                     </span>
@@ -415,9 +436,9 @@ export default function StudentProfilePage() {
                                 {paymentTab === 'tickets' && (
                                     <div className="space-y-3 md:space-y-4">
                                         {tickets.length === 0 ? (
-                                            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                            <div className="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-300">
                                                 <p className="text-4xl mb-2">🎫</p>
-                                                <p className="text-gray-500 font-medium">No has informado pagos aún.</p>
+                                                <p className="text-stone-500 font-medium">No has informado pagos aún.</p>
                                                 <button
                                                     onClick={() => setShowTicketForm(true)}
                                                     className="mt-4 text-scout-blue font-bold hover:underline"
@@ -578,12 +599,12 @@ export default function StudentProfilePage() {
                         {activeTab === 'logros' && (
                             <div className="animate-fade-in">
                                 {logros.length === 0 ? (
-                                    <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+                                    <div className="text-center py-16 bg-stone-50 rounded-xl border border-dashed border-stone-300">
+                                        <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
                                             🏆
                                         </div>
-                                        <h3 className="text-xl font-bold text-gray-800 mb-2">Aún no hay logros registrados</h3>
-                                        <p className="text-gray-500 max-w-md mx-auto">
+                                        <h3 className="text-xl font-bold text-stone-800 mb-2">Aún no hay logros registrados</h3>
+                                        <p className="text-stone-500 max-w-md mx-auto">
                                             Aquí aparecerán las insignias, adelantos y reconocimientos especiales que obtenga el alumno.
                                         </p>
                                     </div>

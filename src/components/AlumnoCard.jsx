@@ -18,21 +18,21 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
     return (
         <div
             onClick={handleCardClick}
-            className="group relative bg-white rounded-2xl p-4 shadow-sm border border-gray-100 transition-all active:scale-[0.98] cursor-pointer overflow-hidden"
+            className="group relative bg-white rounded-2xl p-5 pt-6 shadow-sm border border-stone-100 transition-all hover:shadow-md hover:-translate-y-1 active:scale-[0.99] cursor-pointer overflow-hidden"
         >
-            {/* Indicador lateral de color (Estético) */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${totalDebt > 0 ? 'bg-red-500' : 'bg-scout-green'}`} />
+            {/* Indicador Superior de color (Estético) */}
+            <div className={`absolute left-0 top-0 right-0 h-1.5 ${totalDebt > 0 ? 'bg-red-500' : 'bg-scout-green'}`} />
 
-            <div className="pl-3 flex flex-col h-full">
+            <div className="flex flex-col h-full">
                 {/* Cabecera: Nombre y Estado */}
                 <div className="flex justify-between items-start gap-4 mb-3">
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider bg-stone-100 px-2.5 py-0.5 rounded-full border border-stone-200">
                                 {alumno.seccion || 'Sin Sección'}
                             </span>
                         </div>
-                        <h4 className="text-lg font-bold text-gray-900 leading-tight truncate pr-2">
+                        <h4 className="text-xl font-display font-bold text-stone-800 leading-tight truncate pr-2 group-hover:text-scout-blue transition-colors">
                             {alumno.nombre} {alumno.apellidos_alumno?.split(' ')[0]}
                         </h4>
                     </div>
@@ -63,7 +63,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
 
                 {/* Badges de Items (Scroll Horizontal en móvil) */}
                 {paymentGroups.otros.length > 0 && (
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar mask-fade-right mb-1">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar mask-fade-right mb-2">
                         {paymentGroups.otros.map((p) => (
                             <span
                                 key={p.id}
@@ -82,7 +82,7 @@ const AlumnoCard = ({ alumno, pagos = [] }) => {
                 )}
 
                 {/* Footer Tarjeta: Call to Action sutil */}
-                <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400 group-hover:text-scout-blue transition-colors">
+                <div className="mt-auto pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400 group-hover:text-scout-blue transition-colors">
                     <span className="font-medium">Toca para ver detalles</span>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

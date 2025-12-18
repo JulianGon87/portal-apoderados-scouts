@@ -131,7 +131,7 @@ const LoginForm = () => {
       )}
 
       <div>
-        <label htmlFor="rut" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="rut" className="block text-sm font-medium text-stone-700 mb-2">
           RUT del Apoderado
         </label>
         <input
@@ -142,7 +142,7 @@ const LoginForm = () => {
           value={rut}
           onChange={(e) => setRut(e.target.value)}
           disabled={loading}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-scout-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-4 py-3 rounded-lg border border-stone-300 shadow-sm focus:ring-2 focus:ring-scout-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -179,7 +179,7 @@ export default function LoginPage() {
               <img
                 src="/logo_admapu.png"
                 alt="Logo ADMAPU"
-                className="h-50 w-auto mx-auto mb-0 mt-0 animate-fade-in hover:scale-105 transition-transform"
+                className="h-32 sm:h-40 w-auto mx-auto mb-2 mt-0 animate-fade-in hover:scale-105 transition-transform"
               />
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 mt-0">
                 Portal de Información ADMAPU
