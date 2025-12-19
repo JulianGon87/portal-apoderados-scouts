@@ -334,7 +334,11 @@ const ItemsCobro = () => {
             fetchItems();
         } catch (error) {
             console.error('Error al eliminar item:', error);
-            alert('Error al eliminar el item');
+            if (error.code === '23503') {
+                alert('⚠️ No se puede eliminar este item porque ya tiene PAGOS o TICKETS asociados.\n\nPara eliminarlo, primero debes eliminar (o rechazar) todos los pagos y tickets dependientes de este item.');
+            } else {
+                alert('Error al eliminar el item: ' + error.message);
+            }
         }
     };
 
@@ -362,7 +366,11 @@ const ItemsCobro = () => {
             fetchItems();
         } catch (error) {
             console.error('Error al eliminar grupo:', error);
-            alert('Error al eliminar el grupo de items');
+            if (error.code === '23503') {
+                alert('⚠️ No se pueden eliminar algunos items de este grupo porque ya tienen PAGOS o TICKETS asociados.\n\nIntenta eliminar los items individualmente para identificar cuáles tienen conflictos.');
+            } else {
+                alert('Error al eliminar el grupo de items: ' + error.message);
+            }
         }
     };
 
