@@ -141,6 +141,107 @@ export default function AdminAsistencia() {
         }
     };
 
+    const handleExport = async () => {
+        try {
+            // 1. Obtener todas las reuniones de la unidad (o todas si es 'todos')
+            let queryReuniones = supabase
+                .from('reuniones')
+                .select('id, fecha, unidad, tipo')
+                .order('fecha', { ascending: true });
+
+            if (unidad !== 'todos') {
+                const unidadDb = unidad; // Ya está seteado correctamente en el state
+                queryReuniones = queryReuniones.eq('unidad', unidadDb);
+            }
+
+            const { data: reuniones, error: reunionesError } = await queryReuniones;
+            if (reunionesError) throw reunionesError;
+
+            if (!reuniones || reuniones.length === 0) {
+                addToast('No hay registros de asistencia para exportar', 'info');
+                return;
+            }
+
+            // 2. Obtener todas las asistencias asociadas a estas reuniones
+            const reunionIds = reuniones.map(r => r.id);
+            const { data: asistencias, error: asistenciasError } = await supabase
+                .from('asistencia')
+                .select('estado, alumno_id, reunion_id, alumnos(nombre, apellidos_alumno, rut_alumno)')
+                .in('reunion_id', reunionIds);
+
+            if (asistenciasError) throw asistenciasError;
+
+            // 3. Procesar datos para CSV
+            // Estructura deseada: Nombre, RUT, Fecha1, Fecha2, ...
+
+            // Map de Fechas para columnas
+            const reunionesMap = reuniones.reduce((acc, r) => {
+                acc[r.id] = r.fecha;
+                return acc;
+            }, {});
+
+            const fechasUnicas = [...new Set(reuniones.map(r => r.fecha))].sort();
+
+            // Agrupar asistencias por alumno
+            const alumnosMap = {}; // { alumnoId: { info: {}, asistencias: { fecha: estado } } }
+
+            asistencias.forEach(a => {
+                const alumnoId = a.alumno_id;
+                const fecha = reunionesMap[a.reunion_id];
+
+                if (!alumnosMap[alumnoId]) {
+                    alumnosMap[alumnoId] = {
+                        nombre: `${a.alumnos?.nombre} ${a.alumnos?.apellidos_alumno}`,
+                        rut: a.alumnos?.rut_alumno,
+                        asistencias: {}
+                    };
+                }
+                alumnosMap[alumnoId].asistencias[fecha] = a.estado;
+            });
+
+            // 4. Generar CSV (Compatible con Excel en español)
+            // Header: Usamos punto y coma (;)
+            let csvContent = "Nombre Alumno;RUT";
+            fechasUnicas.forEach(f => {
+                csvContent += `;${f}`;
+            });
+            csvContent += "\n";
+
+            // Rows
+            Object.values(alumnosMap).forEach(alumno => {
+                let row = `"${alumno.nombre}";"${alumno.rut}"`;
+                fechasUnicas.forEach(fecha => {
+                    const estado = alumno.asistencias[fecha] || '-'; // '-' si no hay registro
+                    // Convertir estado a texto corto
+                    let estadoTexto = '';
+                    if (estado === 'presente') estadoTexto = 'P';
+                    else if (estado === 'ausente') estadoTexto = 'A';
+                    else if (estado === 'justificado') estadoTexto = 'J';
+                    else estadoTexto = estado;
+
+                    row += `;${estadoTexto}`;
+                });
+                csvContent += row + "\n";
+            });
+
+            // 5. Descargar archivo con BOM
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `asistencia_${unidad}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            addToast('Planilla descargada exitosamente', 'success');
+
+        } catch (error) {
+            console.error('Error exportando:', error);
+            addToast('Error al exportar: ' + error.message, 'error');
+        }
+    };
     const getSeccionColor = (seccion) => {
         switch (seccion) {
             case 'todos': return 'text-gray-800 bg-gray-100 border-gray-300';
@@ -158,13 +259,21 @@ export default function AdminAsistencia() {
                     <h1 className="text-3xl font-bold text-gray-900">Control de Asistencia</h1>
                     <p className="text-gray-600 mt-1">Registro de asistencia por sección y fecha</p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving || loading || alumnos.length === 0}
-                    className={`btn-scout flex items-center gap-2 ${saving ? 'opacity-75 cursor-not-allowed' : ''}`}
-                >
-                    {saving ? 'Guardando...' : '💾 Guardar Asistencia'}
-                </button>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <button
+                        onClick={handleExport}
+                        className="btn-scout flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
+                    >
+                        <span>📊</span> Exportar Planilla
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || loading || alumnos.length === 0}
+                        className={`btn-scout flex items-center justify-center gap-2 flex-1 md:flex-none ${saving ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    >
+                        {saving ? 'Guardando...' : '💾 Guardar'}
+                    </button>
+                </div>
             </div>
 
             {/* Controles de Selección */}
@@ -179,7 +288,7 @@ export default function AdminAsistencia() {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sección</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sección (para filtrar o exportar)</label>
                     <select
                         value={unidad}
                         onChange={(e) => setUnidad(e.target.value)}

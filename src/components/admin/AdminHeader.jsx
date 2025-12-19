@@ -19,6 +19,8 @@ const AdminHeader = ({ user, rol, onToggleSidebar, sidebarOpen }) => {
         const colors = {
             admin: 'bg-purple-100 text-purple-800',
             scoutmaster: 'bg-blue-100 text-blue-800',
+            subjefe_grupo: 'bg-cyan-100 text-cyan-800',
+            jefe_compania: 'bg-teal-100 text-teal-800',
             jefe: 'bg-green-100 text-green-800',
             tesorero: 'bg-yellow-100 text-yellow-800',
             secretario: 'bg-pink-100 text-pink-800',
@@ -30,7 +32,9 @@ const AdminHeader = ({ user, rol, onToggleSidebar, sidebarOpen }) => {
     const getRoleLabel = (userRol) => {
         const labels = {
             admin: 'Administrador',
-            scoutmaster: 'Scoutmaster',
+            scoutmaster: 'Jefe de Grupo',
+            subjefe_grupo: 'Subjefe de Grupo',
+            jefe_compania: 'Jefe de Compañía',
             jefe: 'Jefe',
             tesorero: 'Tesorero',
             secretario: 'Secretario',

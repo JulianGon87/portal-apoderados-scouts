@@ -24,7 +24,7 @@ const MONTH_OPTIONS = [
  */
 const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
     const [formData, setFormData] = useState({
-        tipo_item: item?.tipo_item || 'cuota_mensual',
+        tipo_item: item?.tipo_item || 'evento',
         descripcion: item?.descripcion || '',
         monto: item?.monto || '',
         anio: item?.anio || new Date().getFullYear(),
@@ -148,8 +148,8 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
 
             {/* Fila 1: Tipo, Año y Fecha */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label htmlFor="tipo_item" className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="md:col-span-1">
+                    <label htmlFor="tipo_item" className="block text-sm font-bold text-gray-700 mb-1">
                         Tipo <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -158,11 +158,11 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
                         value={formData.tipo_item}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent bg-white"
                     >
+                        <option value="evento">Evento</option>
                         <option value="cuota_mensual">Cuota Mensual</option>
                         <option value="rifa">Rifa</option>
-                        <option value="evento">Evento</option>
                         <option value="campamento">Campamento</option>
                         <option value="parche">Parche</option>
                     </select>
@@ -221,13 +221,13 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
             </div>
 
             {/* Fila 3: Monto y Sección */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="monto" className="block text-sm font-bold text-gray-700 mb-1">
                         Monto <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                        <span className="absolute left-3 top-2 text-gray-500">$</span>
+                        <span className="absolute left-3 top-2.5 text-gray-500 font-bold">$</span>
                         <input
                             id="monto"
                             type="number"
@@ -238,19 +238,19 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
                             min="1"
                             step="1"
                             placeholder="5000"
-                            className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                            className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
+                    <label htmlFor="seccion" className="block text-sm font-bold text-gray-700 mb-1">Sección</label>
                     <select
                         id="seccion"
                         name="seccion"
                         value={formData.seccion}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent bg-white"
                     >
                         <option value="">Todas</option>
                         <option value="manada">Manada</option>
@@ -263,21 +263,26 @@ const ItemCobroForm = ({ item = null, onSuccess, onCancel }) => {
 
             {/* Meses (solo para cuota mensual) */}
             {formData.tipo_item === 'cuota_mensual' && (
-                <fieldset className="border border-gray-200 rounded-lg p-3">
-                    <legend className="text-sm font-medium text-gray-700 px-2">
+                <fieldset className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <legend className="text-sm font-bold text-gray-700 px-2 bg-gray-50 rounded">
                         Meses a generar
                     </legend>
-                    <div className="grid grid-rows-3 grid-flow-col gap-x-4 gap-y-1 mt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
                         {MONTH_OPTIONS.map((m) => (
-                            <label key={m.id} htmlFor={`mes-${m.id}`} className="inline-flex items-center hover:bg-gray-50 rounded px-1 cursor-pointer">
+                            <label key={m.id} htmlFor={`mes-${m.id}`} className={`
+                                flex items-center justify-center gap-2 p-2 rounded-lg cursor-pointer transition-all border
+                                ${formData.meses.includes(m.id)
+                                    ? 'bg-blue-50 border-blue-200 text-scout-blue shadow-sm'
+                                    : 'bg-white border-gray-100 hover:border-gray-300 text-gray-600'}
+                            `}>
                                 <input
                                     id={`mes-${m.id}`}
                                     type="checkbox"
                                     checked={formData.meses.includes(m.id)}
                                     onChange={() => toggleMonth(m.id)}
-                                    className="form-checkbox h-4 w-4 text-scout-blue rounded border-gray-300"
+                                    className="w-4 h-4 rounded text-scout-blue border-gray-300 focus:ring-scout-blue"
                                 />
-                                <span className="ml-2 text-sm text-gray-700">{m.name}</span>
+                                <span className="text-sm font-medium">{m.name.substring(0, 3)}</span>
                             </label>
                         ))}
                     </div>

@@ -56,3 +56,5 @@ apply_migration.js
 test_data.xlsx
 
 docs/
+
+supabase/

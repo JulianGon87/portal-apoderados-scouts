@@ -154,7 +154,7 @@ const fetchActivity = async () => {
 };
 
 const AdminDashboard = () => {
-    const { isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
+    const { rol, isLoading: authLoading } = useAdminAuth(['ver_dashboard', 'ver_metricas']);
     const [stats, setStats] = useState({
         totalRecaudado: 0,
         ticketsPendientes: 0,
@@ -163,6 +163,8 @@ const AdminDashboard = () => {
     });
     const [recentActivity, setRecentActivity] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const isFinancialRole = ['admin', 'tesorero', 'scoutmaster', 'presidente', 'secretario', 'subjefe_grupo', 'jefe_compania'].includes(rol);
 
     useEffect(() => {
         const loadData = async () => {
@@ -235,29 +237,33 @@ const AdminDashboard = () => {
                     subtitle="Requieren revisión"
                 />
 
-                <StatsCard
-                    title="Pagos por Aprobar"
-                    value={stats.pagosAprobar}
-                    icon="✅"
-                    color="blue"
-                    subtitle="Esperando aprobación"
-                />
+                {isFinancialRole && (
+                    <>
+                        <StatsCard
+                            title="Pagos por Aprobar"
+                            value={stats.pagosAprobar}
+                            icon="✅"
+                            color="blue"
+                            subtitle="Esperando aprobación"
+                        />
 
-                <StatsCard
-                    title="Total Recaudado (Mes)"
-                    value={`$${stats.totalRecaudado.toLocaleString('es-CL')}`}
-                    icon="💵"
-                    color="green"
-                    subtitle={`${new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}`}
-                />
+                        <StatsCard
+                            title="Total Recaudado (Mes)"
+                            value={`$${stats.totalRecaudado.toLocaleString('es-CL')}`}
+                            icon="💵"
+                            color="green"
+                            subtitle={`${new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}`}
+                        />
 
-                <StatsCard
-                    title="Deuda Total Pendiente"
-                    value={`$${stats.deudaTotal.toLocaleString('es-CL')}`}
-                    icon="📊"
-                    color="red"
-                    subtitle="Todas las familias"
-                />
+                        <StatsCard
+                            title="Deuda Total Pendiente"
+                            value={`$${stats.deudaTotal.toLocaleString('es-CL')}`}
+                            icon="📊"
+                            color="red"
+                            subtitle="Todas las familias"
+                        />
+                    </>
+                )}
             </div>
 
             {/* Actividad Reciente */}

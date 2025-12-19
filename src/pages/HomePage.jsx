@@ -109,6 +109,15 @@ export default function HomePage() {
 
         setAlumnos(alumnosWithItems);
 
+        // --- NUEVA LÓGICA: Redirección automática al Dashboard ---
+        // Si el usuario es Staff (Admin/Jefe/etc) y NO tiene alumnos, lo mandamos directo al dashboard
+        const operationalRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe', 'presidente', 'secretario', 'subjefe_grupo', 'jefe_compania'];
+        if (operationalRoles.includes(apoderadoData.rol) && (!alumnosData || alumnosData.length === 0)) {
+          navigate('/admin');
+          return;
+        }
+        // ---------------------------------------------------------
+
       } catch (error) {
         console.error('Error inesperado:', error);
       } finally {

@@ -20,7 +20,9 @@ export default function AdminUsuarios() {
 
     const rolesDisponibles = [
         { value: 'admin', label: 'Administrador' },
-        { value: 'scoutmaster', label: 'ScoutMaster' },
+        { value: 'scoutmaster', label: 'Jefe de Grupo' },
+        { value: 'subjefe_grupo', label: 'Subjefe de Grupo' },
+        { value: 'jefe_compania', label: 'Jefe de Compañía' },
         { value: 'tesorero', label: 'Tesorero' },
         { value: 'jefe', label: 'Jefe de Unidad' },
         { value: 'secretario', label: 'Secretario' },
@@ -219,19 +221,26 @@ export default function AdminUsuarios() {
                                                 ${user.rol === 'admin' ? 'bg-purple-100 text-purple-800' :
                                                     user.rol === 'tesorero' ? 'bg-green-100 text-green-800' :
                                                         user.rol === 'scoutmaster' ? 'bg-blue-100 text-blue-800' :
-                                                            user.rol === 'jefe' ? 'bg-yellow-100 text-yellow-800' :
-                                                                user.rol === 'secretario' ? 'bg-pink-100 text-pink-800' :
-                                                                    user.rol === 'presidente' ? 'bg-indigo-100 text-indigo-800' :
-                                                                        'bg-gray-100 text-gray-800'}`}>
+                                                            user.rol === 'subjefe_grupo' ? 'bg-cyan-100 text-cyan-800' :
+                                                                user.rol === 'jefe_compania' ? 'bg-teal-100 text-teal-800' :
+                                                                    user.rol === 'jefe' ? 'bg-yellow-100 text-yellow-800' :
+                                                                        user.rol === 'secretario' ? 'bg-pink-100 text-pink-800' :
+                                                                            user.rol === 'presidente' ? 'bg-indigo-100 text-indigo-800' :
+                                                                                'bg-stone-100 text-stone-800'}`}>
                                                 <span>
                                                     {user.rol === 'admin' ? '🛡️' :
                                                         user.rol === 'scoutmaster' ? '⚜️' :
-                                                            user.rol === 'tesorero' ? '💰' :
-                                                                user.rol === 'jefe' ? '⭐' :
-                                                                    user.rol === 'secretario' ? '📝' :
-                                                                        user.rol === 'presidente' ? '👔' : '👤'}
+                                                            user.rol === 'subjefe_grupo' ? '🥈' :
+                                                                user.rol === 'jefe_compania' ? '⛺' :
+                                                                    user.rol === 'tesorero' ? '💰' :
+                                                                        user.rol === 'jefe' ? '⭐' :
+                                                                            user.rol === 'secretario' ? '📝' :
+                                                                                user.rol === 'presidente' ? '👔' : '👤'}
                                                 </span>
-                                                {user.rol}
+                                                {user.rol === 'scoutmaster' ? 'Jefe de Grupo' :
+                                                    user.rol === 'subjefe_grupo' ? 'Subjefe de Grupo' :
+                                                        user.rol === 'jefe_compania' ? 'Jefe de Compañía' :
+                                                            user.rol}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

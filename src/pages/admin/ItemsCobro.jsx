@@ -545,20 +545,20 @@ const ItemsCobro = () => {
 
             {/* Modal de Formulario */}
             {showForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold text-gray-900">
-                                    {editingItem ? 'Editar Item' : 'Crear Nuevo Item'}
-                                </h2>
-                                <button
-                                    onClick={() => setShowForm(false)}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl animate-fade-in-up">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                                {editingItem ? 'Editar Item' : 'Crear Nuevo Item'}
+                            </h2>
+                            <button
+                                onClick={() => setShowForm(false)}
+                                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-5 sm:p-6">
                             <ItemCobroForm
                                 item={editingItem}
                                 onSuccess={handleFormSuccess}

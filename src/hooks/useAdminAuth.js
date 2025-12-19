@@ -83,7 +83,7 @@ export const useAdminAuth = (requiredPermissions = []) => {
 
     // Verificar si tiene al menos un permiso de admin
     const hasAdminAccess = (userRol, userPermisos) => {
-        const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe', 'presidente', 'secretario'];
+        const adminRoles = ['admin', 'scoutmaster', 'tesorero', 'jefe', 'presidente', 'secretario', 'subjefe_grupo', 'jefe_compania'];
         return adminRoles.includes(userRol) || userPermisos.length > 0;
     };
 
@@ -145,7 +145,31 @@ const getPermissionsByRole = (rol) => {
             'gestionar_usuarios',
             'tomar_asistencia'
         ],
+        subjefe_grupo: [
+            'ver_dashboard',
+            'crear_items_cobro',
+            'crear_alumnos',
+            'editar_alumnos',
+            'eliminar_alumnos',
+            'designar_logros',
+            'ver_metricas',
+            'gestionar_usuarios',
+            'tomar_asistencia'
+        ],
+        jefe_compania: [
+            'ver_dashboard',
+            'crear_items_cobro',
+            'crear_alumnos',
+            'editar_alumnos',
+            'eliminar_alumnos',
+            'designar_logros',
+            'ver_metricas',
+            'gestionar_usuarios',
+            'tomar_asistencia'
+        ],
         jefe: [
+            'ver_dashboard',
+            'ver_metricas',
             'designar_logros',
             'tomar_asistencia'
         ],

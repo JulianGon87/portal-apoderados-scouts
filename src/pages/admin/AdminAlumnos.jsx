@@ -129,12 +129,16 @@ export default function AdminAlumnos() {
         try {
             setCheckingApoderado(true);
 
-            // Intentamos buscar por el RUT formateado (sin puntos, con guion)
-            // Y también por si acaso está guardado "sucio" en la BD (tal cual lo escribió el usuario)
+            // Generar variantes de búsqueda:
+            // 1. Formateado: 12345678-9
+            // 2. Limpio: 123456789 (como se guarda a veces en AdminUsuarios)
+            // 3. Ingresado original: por si acaso
+            const rutLimpio = rutFormateado.replace(/\./g, '').replace(/-/g, '');
+
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
-                .or(`rut.eq.${rutFormateado},rut.eq.${rutIngresado}`)
+                .or(`rut.eq.${rutFormateado},rut.eq.${rutLimpio},rut.eq.${rutIngresado}`)
                 .maybeSingle();
 
             if (error) {
@@ -191,22 +195,51 @@ export default function AdminAlumnos() {
 
             // 2. Gestionar Apoderado
             if (!apoderadoExistente) {
-                // Crear nuevo apoderado en tabla users
-                const { data: newApoderado, error: apoderadoError } = await supabase
+                // Preparar RUT limpio para la creación de usuario (username)
+                const rutLimpio = rutApoderadoFormateado.replace(/\./g, '').replace(/-/g, '').toUpperCase();
+
+                // Usar Edge Function para crear usuario en Auth (con clave 123456)
+                // Enviamos los datos básicos que espera la función, más los extras por si la función los soporta
+                const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
+                    body: {
+                        rut: rutLimpio,
+                        nombre: formData.nombre_apoderado,
+                        rol: 'apoderado',
+                        email: formData.email_apoderado // Enviamos email por si la función lo usa
+                    }
+                });
+
+                if (funcError) throw funcError;
+                if (funcData?.error) throw new Error(funcData.error);
+
+                finalApoderadoId = funcData.user.id; // Asumiendo que la función retorna la estructura { user: { id: ... } } o similar
+
+                // Actualizar el perfil completo en public.users con los datos extra (apellidos, teléfono, rut formateado visualmente)
+                // La función 'create-user' crea el registro básico, aquí lo enriquecemos.
+                // Nota: Usamos rutApoderadoFormateado para el campo 'rut' visible en la tabla users si queremos mantener el formato,
+                // o el limpio si queremos consistencia con auth. AdminUsuarios usa limpio en el input pero veamos...
+                // AdminAlumnos usa formatRut (1.234.567-8) en la UI. Vamos a guardar el formateado en la tabla users para consistencia visual si así se prefiere,
+                // PERO AdminUsuarios parece guardar el "limpio" en el campo rut?
+                // Revisando AdminUsuarios, el input dice "sin puntos ni guion". 
+                // Mejor guardamos el rut formateado en public.users para que se vea bonito, y auth usa el email falso generado.
+
+                const { error: updateError } = await supabase
                     .from('users')
-                    .insert([{
-                        rut: rutApoderadoFormateado,
+                    .update({
+                        rut: rutApoderadoFormateado, // Guardamos formato legible en la BD pública
                         nombre: formData.nombre_apoderado,
                         apellidos: formData.apellidos_apoderado,
                         email: formData.email_apoderado,
-                        telefono: formData.telefono_apoderado,
-                        rol: 'apoderado'
-                    }])
-                    .select()
-                    .single();
+                        telefono: formData.telefono_apoderado
+                    })
+                    .eq('id', finalApoderadoId);
 
-                if (apoderadoError) throw new Error('Error al crear apoderado: ' + apoderadoError.message);
-                finalApoderadoId = newApoderado.id;
+                if (updateError) {
+                    console.error('Error actualizando perfil de apoderado:', updateError);
+                    // No bloqueamos, el usuario ya se creó
+                }
+
+                addToast('Apoderado creado. Clave inicial: 123456', 'info');
             }
 
             // 3. Crear/Actualizar Alumno
@@ -312,12 +345,12 @@ export default function AdminAlumnos() {
     // ---------------------------------------
 
     const getSeccionBadgeColor = (seccion) => {
-        switch (seccion) {
-            case 'manada': return 'bg-yellow-100 text-yellow-800';
-            case 'tropa': return 'bg-green-100 text-green-800';
-            case 'compañia': return 'bg-blue-100 text-blue-800';
-            default: return 'bg-red-100 text-red-800';
-        }
+        const s = seccion?.toLowerCase() || '';
+        if (s === 'manada') return 'bg-yellow-100 text-yellow-800';
+        if (s === 'tropa') return 'bg-green-100 text-green-800';
+        if (s === 'compañia' || s === 'compañía') return 'bg-blue-100 text-blue-800';
+        if (s === 'comunidad') return 'bg-purple-100 text-purple-800';
+        return 'bg-gray-100 text-gray-800';
     };
 
     const filteredAlumnos = alumnos.filter(alumno => {
@@ -325,7 +358,18 @@ export default function AdminAlumnos() {
             alumno.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             alumno.apellidos_alumno?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             alumno.rut_alumno?.includes(searchTerm);
-        const matchSeccion = filterSeccion === 'todos' || alumno.seccion === filterSeccion;
+
+        // Normalización para el filtro de sección (case-insensitive y manejo de tildes)
+        let seccionAlumno = alumno.seccion?.toLowerCase() || '';
+        let filtro = filterSeccion.toLowerCase();
+
+        // Si el filtro es "compañia" (sin tilde), que haga match con "compañía" (con tilde) y viceversa
+        if (filtro === 'compañia' || filtro === 'compañía') {
+            const match = seccionAlumno === 'compañia' || seccionAlumno === 'compañía';
+            return matchSearch && match;
+        }
+
+        const matchSeccion = filterSeccion === 'todos' || seccionAlumno === filtro;
         return matchSearch && matchSeccion;
     });
 
@@ -418,68 +462,79 @@ export default function AdminAlumnos() {
                 </div>
             </div>
 
-            {/* Modal de Ficha Completa (Solo Lectura) */}
+            {/* Modal de Ficha Completa (Solo Lectura) - Mobile Optimized */}
             {showViewModal && viewingAlumno && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-                    <div className="bg-white rounded-xl max-w-2xl w-full p-0 shadow-2xl animate-fade-in-up my-8 overflow-hidden">
-                        {/* Header con color de sección */}
-                        <div className={`p-6 ${getSeccionBadgeColor(viewingAlumno.seccion).replace('text-', 'bg-opacity-20 text-')}`}>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900">{viewingAlumno.nombre} {viewingAlumno.apellidos_alumno}</h2>
-                                    <span className={`mt-2 px-3 py-1 inline-flex text-sm font-semibold rounded-full capitalize ${getSeccionBadgeColor(viewingAlumno.seccion)}`}>
-                                        {viewingAlumno.seccion}
-                                    </span>
-                                </div>
-                                <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 text-xl font-bold">
-                                    ✕
-                                </button>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up flex flex-col">
+                        {/* Header Sticky */}
+                        <div className={`p-6 sticky top-0 z-10 border-b border-gray-100 flex justify-between items-start ${getSeccionBadgeColor(viewingAlumno.seccion).replace('text-', 'bg-opacity-20 text-').replace('bg-', 'bg-')}`}>
+                            <div className="flex-1 mr-4">
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{viewingAlumno.nombre} {viewingAlumno.apellidos_alumno}</h2>
+                                <span className={`mt-2 px-3 py-1 inline-flex text-sm font-bold rounded-full capitalize shadow-sm ${getSeccionBadgeColor(viewingAlumno.seccion).replace('bg-opacity-20', 'bg-opacity-100')}`}>
+                                    {viewingAlumno.seccion}
+                                </span>
                             </div>
+                            <button
+                                onClick={() => setShowViewModal(false)}
+                                className="p-2 -mr-2 text-gray-500 hover:text-gray-700 hover:bg-black/10 rounded-full transition-colors"
+                            >
+                                ✕
+                            </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-6 space-y-6 overflow-y-auto">
                             {/* Grid de Información */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Columna Alumno */}
                                 <div>
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">👤 Información del Alumno</h3>
-                                    <dl className="space-y-3">
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">RUT</dt>
-                                            <dd className="text-base text-gray-900">{viewingAlumno.rut_alumno}</dd>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                        <span>👤</span> Información del Alumno
+                                    </h3>
+                                    <dl className="space-y-4">
+                                        <div className="bg-gray-50 p-3 rounded-lg">
+                                            <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">RUT</dt>
+                                            <dd className="text-base font-medium text-gray-900 mt-1">{viewingAlumno.rut_alumno}</dd>
                                         </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Curso</dt>
-                                            <dd className="text-base text-gray-900">{viewingAlumno.curso || 'No registrado'}</dd>
+                                        <div className="bg-gray-50 p-3 rounded-lg">
+                                            <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">Curso</dt>
+                                            <dd className="text-base font-medium text-gray-900 mt-1">{viewingAlumno.curso || 'No registrado'}</dd>
                                         </div>
                                     </dl>
                                 </div>
 
                                 {/* Columna Apoderado */}
                                 <div>
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">👨‍👩‍👧‍👦 Información del Apoderado</h3>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                        <span>👨‍👩‍👧‍👦</span> Apoderado
+                                    </h3>
                                     {viewingAlumno.apoderado ? (
-                                        <dl className="space-y-3">
-                                            <div>
-                                                <dt className="text-sm font-medium text-gray-500">Nombre Completo</dt>
-                                                <dd className="text-base text-gray-900">{viewingAlumno.apoderado.nombre} {viewingAlumno.apoderado.apellidos}</dd>
+                                        <dl className="space-y-4">
+                                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                                <dt className="text-xs font-bold text-blue-600 uppercase tracking-wide">Nombre Completo</dt>
+                                                <dd className="text-base font-bold text-gray-900 mt-1">{viewingAlumno.apoderado.nombre} {viewingAlumno.apoderado.apellidos}</dd>
                                             </div>
-                                            <div>
-                                                <dt className="text-sm font-medium text-gray-500">RUT</dt>
-                                                <dd className="text-base text-gray-900">{viewingAlumno.apoderado.rut}</dd>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="bg-gray-50 p-3 rounded-lg">
+                                                    <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">RUT</dt>
+                                                    <dd className="text-sm font-medium text-gray-900 mt-1">{viewingAlumno.apoderado.rut}</dd>
+                                                </div>
+                                                <div className="bg-gray-50 p-3 rounded-lg">
+                                                    <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</dt>
+                                                    <dd className="text-sm font-medium text-gray-900 mt-1">{viewingAlumno.apoderado.telefono}</dd>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                                                <dd className="text-base text-gray-900">{viewingAlumno.apoderado.email}</dd>
-                                            </div>
-                                            <div>
-                                                <dt className="text-sm font-medium text-gray-500">Teléfono</dt>
-                                                <dd className="text-base text-gray-900">{viewingAlumno.apoderado.telefono}</dd>
+                                            <div className="bg-gray-50 p-3 rounded-lg">
+                                                <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</dt>
+                                                <dd className="text-sm font-medium text-gray-900 mt-1 break-all">{viewingAlumno.apoderado.email}</dd>
                                             </div>
                                         </dl>
                                     ) : (
-                                        <div className="bg-red-50 p-4 rounded-lg text-red-600 text-sm">
-                                            ⚠️ Este alumno no tiene apoderado asignado correctamente.
+                                        <div className="bg-red-50 p-4 rounded-xl border border-red-200 text-red-700 flex gap-3 items-start">
+                                            <span className="text-2xl">⚠️</span>
+                                            <div>
+                                                <p className="font-bold">Sin apoderado asignado</p>
+                                                <p className="text-sm mt-1">Este alumno no tiene un apoderado vinculado correctamente.</p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -487,16 +542,16 @@ export default function AdminAlumnos() {
                         </div>
 
                         {/* Footer con Acciones */}
-                        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
+                        <div className="bg-gray-50 p-4 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row justify-end gap-3 border-t sticky bottom-0 z-10">
                             <button
                                 onClick={() => setShowViewModal(false)}
-                                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                                className="w-full sm:w-auto px-4 py-3 sm:py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-bold text-center"
                             >
                                 Cerrar
                             </button>
                             <button
                                 onClick={handleEditFromView}
-                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm flex items-center gap-2"
+                                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md hover:shadow-lg transform active:scale-95 flex items-center justify-center gap-2"
                             >
                                 ✏️ Editar Datos
                             </button>
@@ -505,181 +560,192 @@ export default function AdminAlumnos() {
                 </div>
             )}
 
-            {/* Modal de Edición/Creación */}
+            {/* Modal de Edición/Creación - Mobile Optimized */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-                    <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl animate-fade-in-up my-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                            {editingAlumno ? 'Editar Alumno' : 'Nuevo Registro'}
-                        </h2>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up flex flex-col">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 sticky top-0 bg-white z-10 flex justify-between items-center">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                                {editingAlumno ? 'Editar Alumno' : 'Nuevo Registro'}
+                            </h2>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="p-5 sm:p-6 overflow-y-auto">
+                            <form id="alumnoForm" onSubmit={handleSubmit} className="space-y-6">
 
-                            {/* Sección Apoderado */}
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span>👨‍👩‍👧‍👦</span> Datos del Apoderado
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">RUT Apoderado</label>
-                                        <div className="relative">
+                                {/* Sección Apoderado */}
+                                <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span>👨‍👩‍👧‍👦</span> Datos del Apoderado
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">RUT Apoderado</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    name="rut_apoderado"
+                                                    required
+                                                    value={formData.rut_apoderado}
+                                                    onChange={handleInputChange}
+                                                    onBlur={handleRutApoderadoBlur}
+                                                    disabled={editingAlumno}
+                                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-scout-blue transition-all ${apoderadoExistente ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300'}`}
+                                                    placeholder="12345678-9"
+                                                />
+                                                {checkingApoderado && (
+                                                    <div className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-b-2 border-scout-blue rounded-full"></div>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 flex gap-1">
+                                                {apoderadoExistente
+                                                    ? <span className="text-green-600 font-semibold">✅ Apoderado encontrado.</span>
+                                                    : <span className="text-gray-500">ℹ️ Ingrese RUT para buscar o registrar uno nuevo.</span>}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
                                             <input
                                                 type="text"
-                                                name="rut_apoderado"
+                                                name="nombre_apoderado"
                                                 required
-                                                value={formData.rut_apoderado}
+                                                value={formData.nombre_apoderado}
                                                 onChange={handleInputChange}
-                                                onBlur={handleRutApoderadoBlur}
-                                                disabled={editingAlumno} // No permitir cambiar RUT apoderado al editar alumno (por simplicidad)
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-scout-blue ${apoderadoExistente ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300'}`}
+                                                disabled={apoderadoExistente}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:text-gray-500 focus:ring-2 focus:ring-scout-blue"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
+                                            <input
+                                                type="text"
+                                                name="apellidos_apoderado"
+                                                required
+                                                value={formData.apellidos_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={apoderadoExistente}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:text-gray-500 focus:ring-2 focus:ring-scout-blue"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                                            <input
+                                                type="email"
+                                                name="email_apoderado"
+                                                required
+                                                value={formData.email_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={apoderadoExistente}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:text-gray-500 focus:ring-2 focus:ring-scout-blue"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+                                            <input
+                                                type="tel"
+                                                name="telefono_apoderado"
+                                                required
+                                                value={formData.telefono_apoderado}
+                                                onChange={handleInputChange}
+                                                disabled={apoderadoExistente}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:text-gray-500 focus:ring-2 focus:ring-scout-blue"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sección Alumno */}
+                                <div className="bg-blue-50 p-4 sm:p-5 rounded-xl border border-blue-200">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span>⚜️</span> Datos del Alumno
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
+                                            <input
+                                                type="text"
+                                                name="nombre"
+                                                required
+                                                value={formData.nombre}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
+                                            <input
+                                                type="text"
+                                                name="apellidos_alumno"
+                                                required
+                                                value={formData.apellidos_alumno}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">RUT Alumno</label>
+                                            <input
+                                                type="text"
+                                                name="rut_alumno"
+                                                required
+                                                value={formData.rut_alumno}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue bg-white"
                                                 placeholder="12.345.678-9"
                                             />
-                                            {checkingApoderado && (
-                                                <div className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-b-2 border-scout-blue rounded-full"></div>
-                                            )}
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {apoderadoExistente
-                                                ? '✅ Apoderado registrado. Sus datos se han cargado.'
-                                                : 'ℹ️ Ingrese el RUT para buscar. Si no existe, podrá registrarlo.'}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                        <input
-                                            type="text"
-                                            name="nombre_apoderado"
-                                            required
-                                            value={formData.nombre_apoderado}
-                                            onChange={handleInputChange}
-                                            disabled={apoderadoExistente}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-                                        <input
-                                            type="text"
-                                            name="apellidos_apoderado"
-                                            required
-                                            value={formData.apellidos_apoderado}
-                                            onChange={handleInputChange}
-                                            disabled={apoderadoExistente}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                        <input
-                                            type="email"
-                                            name="email_apoderado"
-                                            required
-                                            value={formData.email_apoderado}
-                                            onChange={handleInputChange}
-                                            disabled={apoderadoExistente}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                                        <input
-                                            type="tel"
-                                            name="telefono_apoderado"
-                                            required
-                                            value={formData.telefono_apoderado}
-                                            onChange={handleInputChange}
-                                            disabled={apoderadoExistente}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
-                                        />
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Curso</label>
+                                            <input
+                                                type="text"
+                                                name="curso"
+                                                value={formData.curso}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue bg-white"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Sección</label>
+                                            <select
+                                                name="seccion"
+                                                value={formData.seccion}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue bg-white"
+                                            >
+                                                <option value="manada">Manada</option>
+                                                <option value="tropa">Tropa</option>
+                                                <option value="compañia">Compañía</option>
+                                                <option value="comunidad">Comunidad</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </form>
+                        </div>
 
-                            {/* Sección Alumno */}
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span>⚜️</span> Datos del Alumno
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                        <input
-                                            type="text"
-                                            name="nombre"
-                                            required
-                                            value={formData.nombre}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-                                        <input
-                                            type="text"
-                                            name="apellidos_alumno"
-                                            required
-                                            value={formData.apellidos_alumno}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">RUT Alumno</label>
-                                        <input
-                                            type="text"
-                                            name="rut_alumno"
-                                            required
-                                            value={formData.rut_alumno}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                            placeholder="12.345.678-9"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
-                                        <input
-                                            type="text"
-                                            name="curso"
-                                            value={formData.curso}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
-                                        <select
-                                            name="seccion"
-                                            value={formData.seccion}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue"
-                                        >
-                                            <option value="manada">Manada</option>
-                                            <option value="tropa">Tropa</option>
-                                            <option value="compañia">Compañía</option>
-                                            <option value="comunidad">Comunidad</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-                                >
-                                    {editingAlumno ? 'Guardar Cambios' : 'Registrar Todo'}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 z-10 rounded-b-xl">
+                            <button
+                                type="button"
+                                onClick={() => setShowModal(false)}
+                                className="w-full sm:w-auto px-4 py-3 sm:py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-bold text-center"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                form="alumnoForm"
+                                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-scout-blue text-white rounded-lg hover:bg-blue-700 transition-colors font-bold shadow-md hover:shadow-lg transform active:scale-95 text-center"
+                            >
+                                {editingAlumno ? 'Guardar Cambios' : 'Registrar Todo'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
