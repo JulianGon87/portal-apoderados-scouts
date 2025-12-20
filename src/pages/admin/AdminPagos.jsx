@@ -180,7 +180,7 @@ export default function AdminPagos() {
                 const dateStr = item.source === 'pago' ? (item.fecha_pago || item.fecha_aprobacion) : item.created_at;
                 const date = parseDateLocal(dateStr);
 
-                matchMonth = date.getMonth() === parseInt(filterMonth, 10);
+                matchMonth = date.getMonth() === Number.parseInt(filterMonth, 10);
             }
 
             return matchSearch && matchSeccion && matchTipo && matchMonth;
@@ -220,8 +220,8 @@ export default function AdminPagos() {
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        globalThis.addEventListener('keydown', handleKeyDown);
+        return () => globalThis.removeEventListener('keydown', handleKeyDown);
     }, [activeTab, selectedItems, showPreviewModal, showRejectModal, filteredItems]);
 
     const handleSelectAll = (e) => {
@@ -542,18 +542,24 @@ export default function AdminPagos() {
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                         <input
+                            id="search-input"
+                            name="search"
                             type="text"
                             placeholder="Buscar por nombre, apellido o RUT..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                            aria-label="Buscar por nombre, apellido o RUT"
                         />
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
                         <select
+                            id="filter-seccion"
+                            name="seccion"
                             value={filterSeccion}
                             onChange={(e) => setFilterSeccion(e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                            aria-label="Filtrar por sección"
                         >
                             <option value="todos">Todas las Secciones</option>
                             <option value="manada">Manada</option>
@@ -563,9 +569,12 @@ export default function AdminPagos() {
                             <option value="clan">Clan</option>
                         </select>
                         <select
+                            id="filter-tipo"
+                            name="tipo"
                             value={filterTipo}
                             onChange={(e) => setFilterTipo(e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                            aria-label="Filtrar por tipo de cobro"
                         >
                             <option value="todos">Todos los Tipos</option>
                             <option value="cuota_mensual">Cuota Mensual</option>
@@ -573,9 +582,12 @@ export default function AdminPagos() {
                             <option value="evento">Evento</option>
                         </select>
                         <select
+                            id="filter-mes"
+                            name="mes"
                             value={filterMonth}
                             onChange={(e) => setFilterMonth(e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                            aria-label="Filtrar por mes"
                         >
                             <option value="todos">Todos los Meses</option>
                             <option value="0">Enero</option>

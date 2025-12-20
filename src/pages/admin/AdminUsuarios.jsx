@@ -167,11 +167,14 @@ export default function AdminUsuarios() {
             {/* Buscador */}
             <div className="card-glass p-4">
                 <input
+                    id="user-search"
+                    name="search"
                     type="text"
                     placeholder="Buscar por nombre o RUT..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-blue focus:border-transparent"
+                    aria-label="Buscar usuarios por nombre o RUT"
                 />
             </div>
 

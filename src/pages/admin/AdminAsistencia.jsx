@@ -279,8 +279,9 @@ export default function AdminAsistencia() {
             {/* Controles de Selección */}
             <div className="card-glass p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Reunión</label>
+                    <label htmlFor="fecha_reunion" className="block text-sm font-medium text-gray-700 mb-2">Fecha de Reunión</label>
                     <input
+                        id="fecha_reunion"
                         type="date"
                         value={fecha}
                         onChange={(e) => setFecha(e.target.value)}
@@ -288,8 +289,9 @@ export default function AdminAsistencia() {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sección (para filtrar o exportar)</label>
+                    <label htmlFor="unidad_asistencia" className="block text-sm font-medium text-gray-700 mb-2">Sección (para filtrar o exportar)</label>
                     <select
+                        id="unidad_asistencia"
                         value={unidad}
                         onChange={(e) => setUnidad(e.target.value)}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-scout-blue font-medium ${getSeccionColor(unidad)}`}

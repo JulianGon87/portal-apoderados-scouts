@@ -31,7 +31,7 @@ const fetchBasicStats = async () => {
     const { count: ticketsPendientes, error: ticketsError } = await supabase
         .from('tickets_pago')
         .select('*', { count: 'exact', head: true })
-        .eq('estado', 'PENDIENTE');
+        .eq('estado', 'pendiente');
 
     if (ticketsError) throw ticketsError;
 
@@ -39,7 +39,7 @@ const fetchBasicStats = async () => {
     const { count: pagosAprobar, error: aprobarError } = await supabase
         .from('tickets_pago')
         .select('*', { count: 'exact', head: true })
-        .in('estado', ['PENDIENTE', 'RECHAZADO']);
+        .in('estado', ['pendiente', 'rechazado']);
 
     if (aprobarError) throw aprobarError;
 
@@ -98,7 +98,7 @@ const fetchActivity = async () => {
     // Tickets recientes
     const { data: recentTickets } = await supabase
         .from('tickets_pago')
-        .select(`id, monto_total, created_at, alumno:alumnos(nombre, apellidos)`)
+        .select(`id, monto_total, created_at, alumno:alumnos(nombre, apellidos_alumno)`)
         .order('created_at', { ascending: false })
         .limit(3);
 
@@ -108,7 +108,7 @@ const fetchActivity = async () => {
                 type: 'ticket',
                 icon: '🎫',
                 title: `Nuevo ticket #${ticket.id}`,
-                subtitle: `${ticket.alumno?.nombre} ${ticket.alumno?.apellidos} - $${ticket.monto_total?.toLocaleString('es-CL')}`,
+                subtitle: `${ticket.alumno?.nombre} ${ticket.alumno?.apellidos_alumno} - $${ticket.monto_total?.toLocaleString('es-CL')}`,
                 timestamp: ticket.created_at,
                 id: ticket.id
             });

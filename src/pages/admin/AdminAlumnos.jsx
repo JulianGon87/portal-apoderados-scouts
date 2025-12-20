@@ -40,7 +40,7 @@ export default function AdminAlumnos() {
     const formatRut = (rut) => {
         if (!rut) return '';
         // Limpiar todo lo que no sea números o K
-        let value = rut.replace(/[^\dkK]/g, '');
+        let value = rut.replaceAll(/[^\dkK]/g, '');
         // Si no hay valor, retornar vacío
         if (!value) return '';
 
@@ -586,9 +586,10 @@ export default function AdminAlumnos() {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">RUT Apoderado</label>
+                                            <label htmlFor="rut_apoderado" className="block text-sm font-bold text-gray-700 mb-1">RUT Apoderado</label>
                                             <div className="relative">
                                                 <input
+                                                    id="rut_apoderado"
                                                     type="text"
                                                     name="rut_apoderado"
                                                     required
@@ -611,8 +612,9 @@ export default function AdminAlumnos() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
+                                            <label htmlFor="nombre_apoderado" className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
                                             <input
+                                                id="nombre_apoderado"
                                                 type="text"
                                                 name="nombre_apoderado"
                                                 required
@@ -623,8 +625,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
+                                            <label htmlFor="apellidos_apoderado" className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
                                             <input
+                                                id="apellidos_apoderado"
                                                 type="text"
                                                 name="apellidos_apoderado"
                                                 required
@@ -635,8 +638,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                                            <label htmlFor="email_apoderado" className="block text-sm font-bold text-gray-700 mb-1">Email</label>
                                             <input
+                                                id="email_apoderado"
                                                 type="email"
                                                 name="email_apoderado"
                                                 required
@@ -647,8 +651,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+                                            <label htmlFor="telefono_apoderado" className="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
                                             <input
+                                                id="telefono_apoderado"
                                                 type="tel"
                                                 name="telefono_apoderado"
                                                 required
@@ -668,8 +673,9 @@ export default function AdminAlumnos() {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
+                                            <label htmlFor="nombre_alumno" className="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
                                             <input
+                                                id="nombre_alumno"
                                                 type="text"
                                                 name="nombre"
                                                 required
@@ -679,8 +685,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
+                                            <label htmlFor="apellidos_alumno" className="block text-sm font-bold text-gray-700 mb-1">Apellidos</label>
                                             <input
+                                                id="apellidos_alumno"
                                                 type="text"
                                                 name="apellidos_alumno"
                                                 required
@@ -690,8 +697,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">RUT Alumno</label>
+                                            <label htmlFor="rut_alumno" className="block text-sm font-bold text-gray-700 mb-1">RUT Alumno</label>
                                             <input
+                                                id="rut_alumno"
                                                 type="text"
                                                 name="rut_alumno"
                                                 required
@@ -702,8 +710,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Curso</label>
+                                            <label htmlFor="curso_alumno" className="block text-sm font-bold text-gray-700 mb-1">Curso</label>
                                             <input
+                                                id="curso_alumno"
                                                 type="text"
                                                 name="curso"
                                                 value={formData.curso}
@@ -712,8 +721,9 @@ export default function AdminAlumnos() {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Sección</label>
+                                            <label htmlFor="seccion_alumno" className="block text-sm font-bold text-gray-700 mb-1">Sección</label>
                                             <select
+                                                id="seccion_alumno"
                                                 name="seccion"
                                                 value={formData.seccion}
                                                 onChange={handleInputChange}
