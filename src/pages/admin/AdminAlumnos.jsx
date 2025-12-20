@@ -430,10 +430,13 @@ export default function AdminAlumnos() {
                             ) : filteredAlumnos.length === 0 ? (
                                 <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos</td></tr>
                             ) : (
-                                filteredAlumnos.map((alumno) => (
+                                filteredAlumnos.map((alumno, index) => (
                                     <tr key={alumno.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{alumno.nombre} {alumno.apellidos_alumno}</div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                <span className="text-gray-400 mr-2 font-mono">{index + 1}.</span>
+                                                {alumno.nombre} {alumno.apellidos_alumno}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alumno.rut_alumno}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">

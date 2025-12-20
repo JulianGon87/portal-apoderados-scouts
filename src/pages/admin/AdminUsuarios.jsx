@@ -204,7 +204,7 @@ export default function AdminUsuarios() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredUsuarios.map((user) => (
+                                filteredUsuarios.map((user, index) => (
                                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
@@ -212,7 +212,10 @@ export default function AdminUsuarios() {
                                                     {user.nombre?.charAt(0) || 'U'}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">{user.nombre}</div>
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        <span className="text-gray-400 mr-2 font-mono">{index + 1}.</span>
+                                                        {user.nombre}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
