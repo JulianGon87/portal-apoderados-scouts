@@ -333,6 +333,25 @@ export default function AdminAlumnos() {
     };
 
     // --- NUEVAS FUNCIONES PARA VER FICHA ---
+    const handleResetPassword = async (user) => {
+        if (!user) return;
+        if (!confirm(`¿Estás seguro de resetear la contraseña para el apoderado ${user.nombre}? Se establecerá la contraseña por defecto (123456).`)) return;
+
+        try {
+            const { data: funcData, error: funcError } = await supabase.functions.invoke('reset-password', {
+                body: { userId: user.id }
+            });
+
+            if (funcError) throw funcError;
+            if (funcData?.error) throw new Error(funcData.error);
+
+            addToast('Contraseña reseteada exitosamente a 123456. El apoderado deberá cambiarla al ingresar.', 'success');
+        } catch (error) {
+            console.error('Error al resetear contraseña:', error);
+            addToast('Error al resetear: ' + error.message, 'error');
+        }
+    };
+
     const handleView = (alumno) => {
         setViewingAlumno(alumno);
         setShowViewModal(true);
@@ -452,6 +471,15 @@ export default function AdminAlumnos() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            {alumno.apoderado && (
+                                                <button
+                                                    onClick={() => handleResetPassword(alumno.apoderado)}
+                                                    className="text-amber-600 hover:text-amber-900 mr-4"
+                                                    title="Resetear clave apoderado"
+                                                >
+                                                    Reset Clave
+                                                </button>
+                                            )}
                                             <button onClick={() => handleView(alumno)} className="text-scout-blue hover:text-blue-900 mr-4 font-semibold">
                                                 Ver Ficha
                                             </button>

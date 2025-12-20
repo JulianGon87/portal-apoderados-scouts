@@ -116,6 +116,24 @@ export default function AdminUsuarios() {
         setShowModal(true);
     };
 
+    const handleResetPassword = async (user) => {
+        if (!confirm(`¿Estás seguro de resetear la contraseña para ${user.nombre}? Se establecerá la contraseña por defecto (123456).`)) return;
+
+        try {
+            const { data: funcData, error: funcError } = await supabase.functions.invoke('reset-password', {
+                body: { userId: user.id }
+            });
+
+            if (funcError) throw funcError;
+            if (funcData?.error) throw new Error(funcData.error);
+
+            addToast('Contraseña reseteada exitosamente a 123456. El usuario deberá cambiarla al ingresar.', 'success');
+        } catch (error) {
+            console.error('Error al resetear contraseña:', error);
+            addToast('Error al resetear: ' + error.message, 'error');
+        }
+    };
+
     const handleDelete = async (id) => {
         if (id === currentUser.id) {
             addToast('No puedes eliminar tu propio usuario', 'warning');
@@ -250,6 +268,12 @@ export default function AdminUsuarios() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => handleResetPassword(user)}
+                                                className="text-amber-600 hover:text-amber-900 mr-4"
+                                            >
+                                                Resetear
+                                            </button>
                                             <button
                                                 onClick={() => handleEdit(user)}
                                                 className="text-indigo-600 hover:text-indigo-900 mr-4"
